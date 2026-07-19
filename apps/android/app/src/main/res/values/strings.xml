@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QuotaArc</string>
+    <string name="provisional_build">Provisional development build</string>
+
+    <string name="nav_setup">Setup</string>
+    <string name="nav_details">Details</string>
+    <string name="refresh">Refresh</string>
+    <string name="refresh_in_progress">Refreshing…</string>
+    <string name="refresh_idle">Not refreshed in this session</string>
+    <string name="refresh_success">Updated successfully</string>
+    <string name="refresh_stale">Refresh failed; showing the last good snapshot</string>
+    <string name="refresh_failed">Refresh failed: %1$s</string>
+    <string name="refresh_gate_closed">Refresh unavailable: transport gate is closed</string>
+
+    <string name="setup_title">Collector setup</string>
+    <string name="setup_intro">Connection settings remain an in-memory draft until the authenticated Collector transport is approved.</string>
+    <string name="endpoint_label">HTTPS Collector origin</string>
+    <string name="endpoint_supporting">Example: https://collector.example.test:8443</string>
+    <string name="token_label">Pairing token draft</string>
+    <string name="show_token">Show token</string>
+    <string name="hide_token">Hide token</string>
+    <string name="test_connection">Test connection</string>
+    <string name="save_connection">Save connection</string>
+    <string name="gate_closed_title">Transport gate closed</string>
+    <string name="gate_closed_body">No connection was attempted and no draft was saved. INTERNET permission and the wire protocol remain disabled until the transport ADR, pairing, and revocation design are accepted.</string>
+    <string name="setup_not_saved">No connection configuration is stored by this build.</string>
+    <string name="endpoint_required">Enter an HTTPS Collector origin.</string>
+    <string name="endpoint_https_required">Only an HTTPS origin is accepted.</string>
+    <string name="endpoint_origin_required">Use an origin only, without credentials, query, fragment, or an API path.</string>
+    <string name="endpoint_port_invalid">The port must be between 1 and 65535.</string>
+    <string name="token_required">Enter the pairing token draft.</string>
+    <string name="token_too_long">The pairing token draft is too long.</string>
+
+    <string name="details_title">Usage details</string>
+    <string name="snapshot_absent">No verified Collector snapshot is available.</string>
+    <string name="updated_at">Generated %1$s</string>
+    <string name="stale_snapshot">Stale snapshot</string>
+    <string name="current_snapshot">Current snapshot</string>
+    <string name="phone_cache_absent">Phone cache has no snapshot</string>
+    <string name="phone_cache_current">Phone cache is current</string>
+    <string name="phone_cache_aged">Phone cache is older than its freshness policy</string>
+    <string name="phone_cache_fallback">Showing a current last-good phone cache after refresh failure</string>
+    <string name="phone_cache_stale_fallback">Showing an aged last-good phone cache after refresh failure</string>
+
+    <string name="quota_section">Official quota limits</string>
+    <string name="quota_empty">No official quota windows are available.</string>
+    <string name="limit_unnamed">Quota limit</string>
+    <string name="remaining_percent">%1$.0f%% remaining</string>
+    <string name="used_percent">%1$.0f%% used</string>
+    <plurals name="window_minutes">
+        <item quantity="one">%1$d-minute window</item>
+        <item quantity="other">%1$d-minute window</item>
+    </plurals>
+    <string name="resets_at">Resets %1$s</string>
+
+    <string name="official_daily_section">Official daily activity</string>
+    <string name="official_daily_empty">Official daily token activity is unavailable.</string>
+    <string name="daily_tokens">%1$s · %2$s tokens</string>
+
+    <string name="local_models_section">Local activity by model</string>
+    <string name="local_projects_section">Local activity by project</string>
+    <string name="local_empty">No local activity is available for this period.</string>
+    <string name="token_breakdown">%1$s processed · %2$s new input · %3$s cache read · %4$s output · %5$s reasoning</string>
+
+    <string name="sources_section">Source diagnostics</string>
+    <string name="source_quota">Official quota</string>
+    <string name="source_account_usage">Official account activity</string>
+    <string name="source_local_usage">Local session activity</string>
+    <string name="source_collected_at">Collected %1$s</string>
+    <string name="source_not_collected">Not collected</string>
+    <string name="source_error">Diagnostic %1$s: %2$s</string>
+    <string name="source_error_code">Diagnostic: %1$s</string>
+    <plurals name="source_coverage">
+        <item quantity="one">%1$d file · %2$s to %3$s</item>
+        <item quantity="other">%1$d files · %2$s to %3$s</item>
+    </plurals>
+    <plurals name="source_coverage_files">
+        <item quantity="one">%1$d file inspected</item>
+        <item quantity="other">%1$d files inspected</item>
+    </plurals>
+    <string name="status_ok">OK</string>
+    <string name="status_stale">Stale</string>
+    <string name="status_unavailable">Unavailable</string>
+    <string name="status_unsupported">Unsupported</string>
+    <string name="status_error">Error</string>
+</resources>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QuotaArc</string>
+    <string name="provisional_build">临时开发版本</string>
+
+    <string name="nav_setup">设置</string>
+    <string name="nav_details">详情</string>
+    <string name="refresh">刷新</string>
+    <string name="refresh_in_progress">正在刷新…</string>
+    <string name="refresh_idle">本次会话尚未刷新</string>
+    <string name="refresh_success">刷新成功</string>
+    <string name="refresh_stale">刷新失败，正在显示最后一次有效快照</string>
+    <string name="refresh_failed">刷新失败：%1$s</string>
+    <string name="refresh_gate_closed">无法刷新：传输门禁尚未开放</string>
+
+    <string name="setup_title">Collector 设置</string>
+    <string name="setup_intro">在认证 Collector 传输方案获批前，连接设置只作为内存草稿存在。</string>
+    <string name="endpoint_label">HTTPS Collector 来源地址</string>
+    <string name="endpoint_supporting">示例：https://collector.example.test:8443</string>
+    <string name="token_label">配对令牌草稿</string>
+    <string name="show_token">显示令牌</string>
+    <string name="hide_token">隐藏令牌</string>
+    <string name="test_connection">测试连接</string>
+    <string name="save_connection">保存连接</string>
+    <string name="gate_closed_title">传输门禁尚未开放</string>
+    <string name="gate_closed_body">未发起连接，也未保存草稿。在传输 ADR、配对和撤销设计获批前，INTERNET 权限及线上协议均保持关闭。</string>
+    <string name="setup_not_saved">此版本不会保存任何连接配置。</string>
+    <string name="endpoint_required">请输入 HTTPS Collector 来源地址。</string>
+    <string name="endpoint_https_required">只接受 HTTPS 来源地址。</string>
+    <string name="endpoint_origin_required">请只填写来源地址，不要包含凭据、查询参数、片段或 API 路径。</string>
+    <string name="endpoint_port_invalid">端口必须在 1 到 65535 之间。</string>
+    <string name="token_required">请输入配对令牌草稿。</string>
+    <string name="token_too_long">配对令牌草稿过长。</string>
+
+    <string name="details_title">用量详情</string>
+    <string name="snapshot_absent">暂无经过验证的 Collector 快照。</string>
+    <string name="updated_at">生成于 %1$s</string>
+    <string name="stale_snapshot">陈旧快照</string>
+    <string name="current_snapshot">当前快照</string>
+    <string name="phone_cache_absent">手机缓存中没有快照</string>
+    <string name="phone_cache_current">手机缓存处于新鲜期内</string>
+    <string name="phone_cache_aged">手机缓存已超过新鲜度策略</string>
+    <string name="phone_cache_fallback">刷新失败，正在显示新鲜期内的手机最后有效缓存</string>
+    <string name="phone_cache_stale_fallback">刷新失败，正在显示已过期的手机最后有效缓存</string>
+
+    <string name="quota_section">官方配额</string>
+    <string name="quota_empty">暂无官方配额窗口。</string>
+    <string name="limit_unnamed">配额</string>
+    <string name="remaining_percent">剩余 %1$.0f%%</string>
+    <string name="used_percent">已使用 %1$.0f%%</string>
+    <plurals name="window_minutes">
+        <item quantity="other">%1$d 分钟窗口</item>
+    </plurals>
+    <string name="resets_at">重置时间 %1$s</string>
+
+    <string name="official_daily_section">官方每日活动</string>
+    <string name="official_daily_empty">暂无官方每日 Token 活动。</string>
+    <string name="daily_tokens">%1$s · %2$s Token</string>
+
+    <string name="local_models_section">按模型统计的本地活动</string>
+    <string name="local_projects_section">按项目统计的本地活动</string>
+    <string name="local_empty">该周期暂无本地活动。</string>
+    <string name="token_breakdown">处理 %1$s · 新输入 %2$s · 缓存读取 %3$s · 输出 %4$s · 推理 %5$s</string>
+
+    <string name="sources_section">数据源诊断</string>
+    <string name="source_quota">官方配额</string>
+    <string name="source_account_usage">官方账户活动</string>
+    <string name="source_local_usage">本地会话活动</string>
+    <string name="source_collected_at">采集于 %1$s</string>
+    <string name="source_not_collected">尚未采集</string>
+    <string name="source_error">诊断 %1$s：%2$s</string>
+    <string name="source_error_code">诊断：%1$s</string>
+    <plurals name="source_coverage">
+        <item quantity="other">%1$d 个文件 · %2$s 至 %3$s</item>
+    </plurals>
+    <plurals name="source_coverage_files">
+        <item quantity="other">已检查 %1$d 个文件</item>
+    </plurals>
+    <string name="status_ok">正常</string>
+    <string name="status_stale">陈旧</string>
+    <string name="status_unavailable">不可用</string>
+    <string name="status_unsupported">不支持</string>
+    <string name="status_error">错误</string>
+</resources>

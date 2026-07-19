@@ -1,0 +1,5 @@
+{"timestamp":"2026-07-19T05:00:00.000Z","type":"session_meta","payload":{"id":"thread-optional","cwd":"/workspace/optional-project","model_provider":"openai"}}
+{"timestamp":"2026-07-19T05:00:01.000Z","type":"turn_context","payload":{"turn_id":"turn-optional","model":"gpt-test"}}
+{"timestamp":"2026-07-19T05:00:02.000Z","type":"event_msg","payload":{"type":"token_count","event_index":2,"info":{"total_token_usage":{"input_tokens":100,"output_tokens":10,"reasoning_output_tokens":5,"total_tokens":110}}}}
+{"timestamp":"2026-07-19T05:00:03.000Z","type":"event_msg","payload":{"type":"token_count","event_index":3,"info":{"total_token_usage":{"input_tokens":120,"output_tokens":12,"total_tokens":132}}}}
+{"timestamp":"2026-07-19T05:00:04.000Z","type":"event_msg","payload":{"type":"token_count","event_index":4,"info":{"total_token_usage":{"input_tokens":140,"output_tokens":14,"reasoning_output_tokens":7,"total_tokens":154}}}}

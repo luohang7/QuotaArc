@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Codex quota, reset time, and local activity</string>
+    <string name="widget_name" translatable="false">QuotaArc</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="widget_refreshing_short">Refreshing</string>
+    <string name="widget_refresh_accessibility">Refresh QuotaArc quota and activity</string>
+    <string name="widget_refreshing_accessibility">QuotaArc is refreshing</string>
+    <string name="widget_no_quota_buckets">No quota windows</string>
+    <string name="widget_no_today_activity">No local activity today</string>
+    <string name="widget_reading_cache">Reading cached data…</string>
+    <string name="widget_gate_closed_empty">Authenticated transport is not enabled</string>
+    <string name="widget_not_configured_empty">Collector is not connected</string>
+    <string name="widget_authentication_empty">Authentication is required</string>
+    <string name="widget_offline_empty">Offline with no cached data</string>
+    <string name="widget_security_empty">Security verification failed</string>
+    <string name="widget_incompatible_empty">Data version is incompatible</string>
+    <string name="widget_no_cache">No cached data</string>
+    <string name="widget_wait_first_success">Waiting for the first successful sync</string>
+    <string name="widget_refreshing_status">Refreshing…</string>
+    <string name="widget_gate_closed_cached">Transport gate closed; showing cache</string>
+    <string name="widget_not_configured_cached">Not connected; showing cache</string>
+    <string name="widget_authentication_cached">Authentication expired; showing cache</string>
+    <string name="widget_offline_cached">Offline; showing cache</string>
+    <string name="widget_security_cached">Security verification failed; showing cache</string>
+    <string name="widget_incompatible_cached">Incompatible data; showing cache</string>
+    <string name="widget_unavailable_cached">Sync failed; showing cache</string>
+    <string name="widget_source_last_good">Some sources use their last successful value</string>
+    <string name="widget_quota_fallback">Quota</string>
+    <string name="widget_just_updated">Updated just now</string>
+    <string name="widget_reset_date_pattern">MMM d, HH:mm</string>
+    <string name="widget_available_format">%1$d%% available</string>
+    <string name="widget_reset_format">Resets %1$s</string>
+    <string name="widget_today_activity_format">%1$s Tokens processed locally today</string>
+    <string name="widget_minutes_ago_format">%1$d min ago</string>
+    <string name="widget_hours_ago_format">%1$d hr ago</string>
+    <string name="widget_days_ago_format">%1$d d ago</string>
+    <string name="widget_cached_format">Cached · %1$s</string>
+    <string name="widget_source_stale_format">Source stale · %1$s</string>
+    <string name="widget_window_weeks_format">%1$dw</string>
+    <string name="widget_window_days_format">%1$dd</string>
+    <string name="widget_window_hours_format">%1$dh</string>
+    <string name="widget_window_minutes_format">%1$dm</string>
+</resources>

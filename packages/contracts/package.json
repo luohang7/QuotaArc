@@ -1,0 +1,31 @@
+{
+  "name": "@quotaarc/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    },
+    "./schema/v1/summary.schema.json": "./schema/v1/summary.schema.json",
+    "./examples/*": "./examples/*"
+  },
+  "files": [
+    "dist/src",
+    "schema",
+    "examples",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm run build && node --test dist/test/contracts.test.js"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0"
+  }
+}

@@ -1,0 +1,6 @@
+{"timestamp":"2026-07-19T01:00:00.000Z","type":"session_meta","payload":{"id":"thread-basic","cwd":"/Users/example/work/alpha","model_provider":"openai"}}
+{"timestamp":"2026-07-19T01:00:01.000Z","type":"response_item","payload":{"type":"message","content":"this sensitive-looking record must be ignored"}}
+{"timestamp":"2026-07-19T01:00:02.000Z","type":"turn_context","payload":{"turn_id":"turn-1","cwd":"/Users/example/work/alpha","model":"gpt-test"}}
+{"timestamp":"2026-07-19T01:00:03.000Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-1","event_index":3}}
+{"timestamp":"2026-07-19T01:00:04.000Z","type":"event_msg","payload":{"type":"token_count","turn_id":"turn-1","event_index":4,"info":{"total_token_usage":{"input_tokens":100,"cached_input_tokens":20,"output_tokens":10,"reasoning_output_tokens":2,"total_tokens":110}}}}
+{"timestamp":"2026-07-19T01:00:05.000Z","type":"event_msg","payload":{"type":"token_count","turn_id":"turn-1","event_index":5,"info":{"total_token_usage":{"input_tokens":160,"cached_input_tokens":30,"output_tokens":20,"reasoning_output_tokens":4,"total_tokens":180,"cache_write_input_tokens":6}}}}

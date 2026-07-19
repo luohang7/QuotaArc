@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Codex 配额、重置时间和本地用量</string>
+    <string name="widget_refresh">刷新</string>
+    <string name="widget_refreshing_short">刷新中</string>
+    <string name="widget_refresh_accessibility">刷新 QuotaArc 配额和用量</string>
+    <string name="widget_refreshing_accessibility">QuotaArc 正在刷新</string>
+    <string name="widget_no_quota_buckets">暂无配额桶</string>
+    <string name="widget_no_today_activity">今日暂无本地活动</string>
+    <string name="widget_reading_cache">正在读取缓存…</string>
+    <string name="widget_gate_closed_empty">认证传输尚未开放</string>
+    <string name="widget_not_configured_empty">尚未连接 Collector</string>
+    <string name="widget_authentication_empty">需要重新认证</string>
+    <string name="widget_offline_empty">离线，暂无缓存</string>
+    <string name="widget_security_empty">安全校验失败</string>
+    <string name="widget_incompatible_empty">数据版本不兼容</string>
+    <string name="widget_no_cache">暂无缓存数据</string>
+    <string name="widget_wait_first_success">等待首次成功同步</string>
+    <string name="widget_refreshing_status">正在刷新…</string>
+    <string name="widget_gate_closed_cached">连接门禁关闭，显示缓存</string>
+    <string name="widget_not_configured_cached">未连接，显示缓存</string>
+    <string name="widget_authentication_cached">认证失效，显示缓存</string>
+    <string name="widget_offline_cached">离线，显示缓存</string>
+    <string name="widget_security_cached">安全校验失败，显示缓存</string>
+    <string name="widget_incompatible_cached">版本不兼容，显示缓存</string>
+    <string name="widget_unavailable_cached">同步失败，显示缓存</string>
+    <string name="widget_source_last_good">部分来源使用上次成功值</string>
+    <string name="widget_quota_fallback">配额</string>
+    <string name="widget_just_updated">刚刚更新</string>
+    <string name="widget_reset_date_pattern">M月d日 HH:mm</string>
+    <string name="widget_available_format">%1$d%% 可用</string>
+    <string name="widget_reset_format">%1$s 重置</string>
+    <string name="widget_today_activity_format">今日本地活动 %1$s Tokens</string>
+    <string name="widget_minutes_ago_format">%1$d分钟前</string>
+    <string name="widget_hours_ago_format">%1$d小时前</string>
+    <string name="widget_days_ago_format">%1$d天前</string>
+    <string name="widget_cached_format">缓存 · %1$s</string>
+    <string name="widget_source_stale_format">来源陈旧 · %1$s</string>
+    <string name="widget_window_weeks_format">%1$d周</string>
+    <string name="widget_window_days_format">%1$d天</string>
+    <string name="widget_window_hours_format">%1$d小时</string>
+    <string name="widget_window_minutes_format">%1$d分钟</string>
+</resources>

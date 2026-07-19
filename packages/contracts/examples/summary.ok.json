@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-19T08:30:00Z",
+  "stale": false,
+  "sources": {
+    "quota": {
+      "kind": "codex_app_server",
+      "status": "ok",
+      "collectedAt": "2026-07-19T08:29:58Z",
+      "error": null
+    },
+    "accountUsage": {
+      "kind": "codex_app_server",
+      "status": "ok",
+      "collectedAt": "2026-07-19T08:29:58Z",
+      "error": null
+    },
+    "localUsage": {
+      "kind": "codex_session_logs",
+      "status": "ok",
+      "collectedAt": "2026-07-19T08:29:59Z",
+      "error": null,
+      "coverage": {
+        "files": 12,
+        "firstEventAt": "2026-07-01T01:10:00Z",
+        "lastEventAt": "2026-07-19T08:29:40Z"
+      }
+    }
+  },
+  "quota": {
+    "limits": [
+      {
+        "limitId": "codex",
+        "limitName": "Codex",
+        "windows": [
+          {
+            "windowMinutes": 10080,
+            "usedPercent": 19,
+            "remainingPercent": 81,
+            "resetsAt": "2026-07-25T00:00:00Z"
+          }
+        ]
+      }
+    ]
+  },
+  "accountUsage": {
+    "dailyTokens": [
+      { "date": "2026-07-17", "tokens": 12500 },
+      { "date": "2026-07-18", "tokens": 18100 },
+      { "date": "2026-07-19", "tokens": 7300 }
+    ]
+  },
+  "localUsage": {
+    "period": "today",
+    "newInputTokens": 4200,
+    "cachedInputTokens": 2100,
+    "outputTokens": 1600,
+    "reasoningTokens": 700,
+    "models": [
+      {
+        "id": "model-primary",
+        "label": "Primary model",
+        "newInputTokens": 4200,
+        "cachedInputTokens": 2100,
+        "outputTokens": 1600,
+        "reasoningTokens": 700
+      }
+    ],
+    "projects": [
+      {
+        "id": "project-7f4c",
+        "label": "Sample Project",
+        "newInputTokens": 4200,
+        "cachedInputTokens": 2100,
+        "outputTokens": 1600,
+        "reasoningTokens": 700
+      }
+    ]
+  }
+}

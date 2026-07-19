@@ -1,0 +1,22 @@
+{
+  "name": "quotaarc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.15.0",
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "android:policy": "node scripts/check-android-phase2.mjs",
+    "ci": "pnpm build && pnpm typecheck && pnpm test && pnpm --filter @quotaarc/collector package:smoke && pnpm android:policy"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "7.0.2"
+  }
+}

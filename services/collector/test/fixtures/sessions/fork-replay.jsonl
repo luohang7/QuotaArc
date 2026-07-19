@@ -1,0 +1,5 @@
+{"timestamp":"2026-07-19T04:00:00.500Z","type":"session_meta","payload":{"id":"thread-child","parent_thread_id":"thread-parent","cwd":"/workspace/fork-project","model_provider":"openai"}}
+{"timestamp":"2026-07-19T04:00:01.000Z","type":"turn_context","payload":{"turn_id":"turn-parent","model":"gpt-test"}}
+{"timestamp":"2026-07-19T04:00:02.000Z","type":"event_msg","payload":{"type":"token_count","turn_id":"turn-parent","event_index":7,"info":{"total_token_usage":{"input_tokens":100,"cached_input_tokens":20,"output_tokens":10,"total_tokens":110}}}}
+{"timestamp":"2026-07-19T04:00:03.000Z","type":"turn_context","payload":{"turn_id":"turn-child","model":"gpt-test"}}
+{"timestamp":"2026-07-19T04:00:04.000Z","type":"event_msg","payload":{"type":"token_count","turn_id":"turn-child","event_index":8,"info":{"total_token_usage":{"input_tokens":140,"cached_input_tokens":25,"output_tokens":15,"total_tokens":155}}}}

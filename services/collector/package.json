@@ -1,0 +1,27 @@
+{
+  "name": "@quotaarc/collector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "quotaarc": "./dist/package/quotaarc.mjs"
+  },
+  "files": [
+    "dist/package/quotaarc.mjs"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "bundle": "pnpm --filter @quotaarc/contracts build && node scripts/bundle.mjs",
+    "prepack": "pnpm run bundle",
+    "package:smoke": "node scripts/package-smoke.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm run build && node --test dist/test/*/*.test.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@quotaarc/contracts": "workspace:*",
+    "esbuild": "0.28.1"
+  }
+}
