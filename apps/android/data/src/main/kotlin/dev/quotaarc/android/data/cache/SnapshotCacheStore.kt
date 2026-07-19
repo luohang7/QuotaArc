@@ -21,12 +21,13 @@ internal data class StoredRefreshAttempt(
 @Serializable
 internal data class SnapshotCacheEnvelope(
     val cacheFormatVersion: Int = CACHE_FORMAT_VERSION,
+    val collectorIdentity: String? = null,
     val latestValidated: StoredSnapshot? = null,
     val lastGood: StoredSnapshot? = null,
     val lastAttempt: StoredRefreshAttempt? = null,
 ) {
     companion object {
-        const val CACHE_FORMAT_VERSION = 1
+        const val CACHE_FORMAT_VERSION = 2
         val EMPTY = SnapshotCacheEnvelope()
     }
 }
@@ -39,4 +40,21 @@ internal interface SnapshotCacheStore {
     suspend fun update(
         transform: (SnapshotCacheEnvelope) -> SnapshotCacheEnvelope,
     ): SnapshotCacheEnvelope
+}
+
+/**
+ * Preserves an identity-bound last-good cache while the credential is missing
+ * or cannot be decrypted. Refresh failures can be evaluated in memory, but a
+ * disabled repository can never rebind or erase the authoritative cache.
+ */
+internal class ReadOnlySnapshotCacheStore(
+    private val delegate: SnapshotCacheStore,
+) : SnapshotCacheStore {
+    override fun observe(): Flow<SnapshotCacheEnvelope> = delegate.observe()
+
+    override suspend fun read(): SnapshotCacheEnvelope = delegate.read()
+
+    override suspend fun update(
+        transform: (SnapshotCacheEnvelope) -> SnapshotCacheEnvelope,
+    ): SnapshotCacheEnvelope = transform(delegate.read())
 }

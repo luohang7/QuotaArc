@@ -3,6 +3,34 @@ package dev.quotaarc.android.data.repository
 import dev.quotaarc.android.data.contract.QuotaArcSummary
 import java.time.Instant
 
+@JvmInline
+value class CollectorIdentity private constructor(
+    val stableId: String,
+) {
+    companion object {
+        fun fromStableId(stableId: String): CollectorIdentity {
+            require(stableId.length in 1..MAX_LENGTH) {
+                "Collector identity must contain between 1 and $MAX_LENGTH characters"
+            }
+            require(stableId.all(::isAllowedIdentityCharacter)) {
+                "Collector identity must be an opaque ASCII identifier"
+            }
+            return CollectorIdentity(stableId)
+        }
+
+        private const val MAX_LENGTH = 128
+
+        private fun isAllowedIdentityCharacter(character: Char): Boolean =
+            character in 'a'..'z' ||
+                character in 'A'..'Z' ||
+                character in '0'..'9' ||
+                character == '.' ||
+                character == '_' ||
+                character == ':' ||
+                character == '-'
+    }
+}
+
 data class CachedSnapshot(
     val summary: QuotaArcSummary,
     val receivedAt: Instant,

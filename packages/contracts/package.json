@@ -12,6 +12,10 @@
       "import": "./dist/src/index.js"
     },
     "./schema/v1/summary.schema.json": "./schema/v1/summary.schema.json",
+    "./schema/v1/device-health.schema.json": "./schema/v1/device-health.schema.json",
+    "./schema/v1/device-error.schema.json": "./schema/v1/device-error.schema.json",
+    "./schema/v1/refresh-receipt.schema.json": "./schema/v1/refresh-receipt.schema.json",
+    "./schema/v1/pairing-bundle.schema.json": "./schema/v1/pairing-bundle.schema.json",
     "./examples/*": "./examples/*"
   },
   "files": [

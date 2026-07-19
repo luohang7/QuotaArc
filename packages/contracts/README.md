@@ -1,10 +1,21 @@
 # @quotaarc/contracts
 
-QuotaArc's sanitized mobile v1 read model.
+QuotaArc's sanitized mobile v1 read model and fixed device-transport
+contracts.
 
 The package exports TypeScript types plus `validateQuotaArcSummary`,
 `assertQuotaArcSummary`, and `parseQuotaArcSummary`. The canonical JSON Schema
 is exported as `@quotaarc/contracts/schema/v1/summary.schema.json`.
+
+Phase 2B also exports strict runtime parsers and JSON Schemas for:
+
+- Collector health and stable identity;
+- refresh receipts;
+- normalized device API errors;
+- the one-time offline pairing bundle.
+
+These contracts do not expose a generic HTTP method, path, request body, or
+raw Codex RPC capability.
 
 Contract choices:
 

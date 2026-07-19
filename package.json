@@ -13,6 +13,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "android:policy": "node scripts/check-android-phase2.mjs",
+    "android:verify": "bash scripts/verify-android.sh",
     "ci": "pnpm build && pnpm typecheck && pnpm test && pnpm --filter @quotaarc/collector package:smoke && pnpm android:policy"
   },
   "devDependencies": {

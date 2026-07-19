@@ -1,70 +1,127 @@
 # QuotaArc
 
-QuotaArc is a local-first companion for viewing AI quota and usage on a phone
-and watch.
+QuotaArc is a local-first companion for viewing Codex quota and sanitized
+usage on Android and, later, Xiaomi Watch S4.
 
-The first target is:
+The connected Phase 2 Android MVP consists of:
 
-- Codex account quota and reset times
-- Official Codex account Token activity
-- Local Codex usage grouped by day, model, project, and turn
-- A Xiaomi 14 Android app and Glance home-screen widget
-- A Xiaomi Watch S4 Vela app
+- a local Collector that reads Codex through local stdio and session files;
+- a strict aggregate-only v1 contract;
+- a same-LAN, fixed-route HTTPS device API;
+- an Android app with test-before-save pairing and source diagnostics;
+- a responsive Glance widget with manual and 30-minute WorkManager refresh.
 
-## Project status
+Codex credentials, prompts, messages, tool arguments, and absolute paths never
+enter the phone contract.
 
-Research and local feasibility validation were completed on 2026-07-19.
-Phase 0/1 Collector work and the gate-closed Phase 2A Android vertical slice
-started on 2026-07-19.
+## Status
 
-Implemented so far:
+Implemented on 2026-07-20:
 
-- a pnpm/TypeScript monorepo with macOS CI;
-- a strict, versioned, sanitized v1 contract with JSON Schema and examples;
-- a Codex app-server JSONL client for official quota and account activity;
-- a streaming active/archive session indexer with counter-reset and fork/replay
-  handling;
-- a permission-hardened Node SQLite cursor/event/last-good persistence spike
-  with serialized first-open migrations;
-- live `doctor`, `collect --once`, and grouped `usage` CLI commands;
-- a single-file packaged CLI with a clean-install smoke test;
-- fixture, contract, privacy, RPC, indexer, store, snapshot, and CLI tests;
-- a strict Android v1 decoder, persistent last-good DataStore cache, and
-  single-flight refresh repository;
-- an English/Chinese Material 3 setup and source-separated detail app;
-- a responsive English/Chinese Glance widget with dark/light colors,
-  accessibility text, manual refresh, and a unique 30-minute WorkManager policy
-  that remains dormant while the transport gate is closed;
-- a pinned Gradle Wrapper and an Android CI job.
+- shared strict schemas for summary, health, pairing, refresh receipts, and
+  normalized device errors;
+- Collector TLS identity, one-time device issue, list, revoke, separate rate
+  limits, HMAC timestamp/nonce replay protection, and explicit concrete-IP LAN
+  opt-in;
+- only `GET /v1/health`, `GET /v1/summary`, and `POST /v1/refresh`;
+- Android leaf-certificate SHA-256 pinning while retaining platform hostname
+  verification, no redirects, no cleartext, and a 256 KiB response bound;
+- Android Keystore AES-256-GCM credential protection with metadata as
+  authenticated associated data;
+- test-only connection probing and probe-then-commit save semantics;
+- phone-cache isolation by stable `collectorId`;
+- one manual follow-up when a manual refresh arrives behind an in-flight
+  periodic refresh;
+- Glance unit tests, a WorkManager TestDriver managed-device test, debug and
+  minified-release build gates.
 
-Still gated or incomplete:
+Current local evidence is recorded in
+[implementation status](docs/IMPLEMENTATION_STATUS.md). Physical Xiaomi 14
+behavior remains a separate release gate and must follow the
+[connection and acceptance runbook](docs/XIAOMI14_CONNECTION_AND_ACCEPTANCE.md).
 
-- durable SQLite cursors are not yet wired into the live scanner;
-- live last-good/cursor integration, the loopback device API, authentication,
-  and refresh coalescing remain Phase 1 work;
-- the Android release transport intentionally remains
-  `transport_gate_closed`; the app has no `INTERNET` permission and stores no
-  endpoint or credential;
-- Android Studio/JDK/SDK/ADB are not installed as a usable host toolchain;
-  isolated JDK/Gradle configuration passed, but SDK 36 packages and licenses
-  still block Android compilation;
-- the Android app/widget have not been built, linted, or exercised on a Xiaomi
-  14;
-- AIoT-IDE and the Watch S4 simulator build have not started;
-- real Watch S4 delivery remains gated by Xiaomi partner access.
+## Security model
 
-The earlier validation established that:
+- The Collector listens on `127.0.0.1` by default.
+- LAN mode requires both `--allow-lan` and one concrete interface IP; wildcard
+  listeners are rejected.
+- Android pins the paired certificate and does not override hostname
+  verification.
+- Requests are device-scoped HMAC-SHA256 signatures over method, fixed path,
+  timestamp, nonce, and the empty-body digest.
+- The private `devices.json` registry stores authentication-equivalent derived
+  verification keys. It is mode-restricted, gitignored, and must be protected
+  like any other credential even though plaintext tokens are not recoverable
+  from it.
+- Pairing is offline CLI-to-phone transfer; there is no unauthenticated pairing
+  endpoint, discovery broadcast, raw RPC, CORS surface, or hosted relay.
+- Revocation is checked on every request. Rotation is issue-new, save-new,
+  revoke-old.
 
-- the installed Codex app-server exposes both account rate limits and account
-  Token activity;
-- local Codex session files contain enough information for model and project
-  statistics, but these statistics are local estimates rather than an official
-  bill;
-- Xiaomi 14 can use the standard Android Glance and WorkManager stack;
-- Watch S4 supports Vela `system.fetch`, local storage, and phone
-  interconnection;
-- Watch S4 real-device debugging is currently restricted to specific Xiaomi
-  partners, so watch delivery must be gated separately from the phone MVP.
+See [ADR 0003](docs/adr/0003-direct-pinned-tls-device-transport.md).
+
+## Develop and verify
+
+Requirements:
+
+- Node.js 24 or newer
+- pnpm 11
+- OpenSSL 3.x for device TLS identity generation
+- JDK 17, Android Platform 36, Build Tools 36, and accepted SDK licenses for
+  Android builds
+- a signed-in Codex installation for live Collector checks
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run ci
+pnpm android:verify
+```
+
+`pnpm run ci` builds and tests the TypeScript workspace, runs the packaged CLI
+smoke test, and enforces the Android connected-transport security policy.
+`pnpm android:verify` runs Android JVM tests, lint, debug assembly, and the
+minified release build.
+
+## Connect a phone
+
+Build the packaged Collector:
+
+```bash
+pnpm --filter @quotaarc/collector bundle
+```
+
+Replace `192.168.1.23` with the Mac's actual stable LAN address:
+
+```bash
+node services/collector/dist/package/quotaarc.mjs \
+  device tls-init --host 192.168.1.23
+
+node services/collector/dist/package/quotaarc.mjs \
+  device issue \
+  --label "Xiaomi 14" \
+  --endpoint https://192.168.1.23:8443
+
+node services/collector/dist/package/quotaarc.mjs \
+  serve \
+  --allow-lan \
+  --host 192.168.1.23 \
+  --port 8443
+```
+
+Paste the complete one-time JSON from `device issue` into Android Setup. “Test
+connection” never persists or switches state. “Save connection” repeats the
+strict probe, commits the encrypted credential, clears the draft, and
+activates the new Collector.
+
+List or revoke without revealing credentials:
+
+```bash
+node services/collector/dist/package/quotaarc.mjs device list
+node services/collector/dist/package/quotaarc.mjs \
+  device revoke --id <deviceId>
+```
+
+Do not expose the listener with router port forwarding.
 
 ## Documents
 
@@ -72,62 +129,7 @@ The earlier validation established that:
 - [Development plan](docs/DEVELOPMENT_PLAN.md)
 - [Implementation status and evidence](docs/IMPLEMENTATION_STATUS.md)
 - [Release gates](docs/RELEASE_GATES.md)
+- [Xiaomi 14 connection and acceptance](docs/XIAOMI14_CONNECTION_AND_ACCEPTANCE.md)
 
-## Planned source layout
-
-```text
-QuotaArc/
-├── apps/
-│   ├── android/
-│   └── watch-vela/
-├── services/
-│   └── collector/
-├── packages/
-│   └── contracts/
-└── docs/
-```
-
-The old working name `HyperQuota` has been replaced by `QuotaArc`.
-
-## Develop and run
-
-Requirements:
-
-- Node.js 24 or newer
-- pnpm 11
-- an installed, signed-in Codex app-server for live official data
-
-```bash
-pnpm install --frozen-lockfile
-pnpm run ci
-pnpm build
-pnpm --filter @quotaarc/collector package:smoke
-
-node services/collector/dist/src/cli/main.js doctor
-node services/collector/dist/src/cli/main.js collect --once
-node services/collector/dist/src/cli/main.js usage \
-  --period today \
-  --group-by model
-```
-
-The live commands read Codex through local stdio and scan local session JSONL.
-They do not read OAuth credentials, prompts, messages, or tool arguments into
-the device-facing v1 contract. Project output is reduced to a safe basename and
-a one-way identifier.
-
-See [release gates](docs/RELEASE_GATES.md) before interpreting a successful
-Collector run as Android, Watch simulator, or real-device readiness.
-
-The Android source and its security policy can be checked without an SDK:
-
-```bash
-pnpm android:policy
-```
-
-After the developer has accepted the Android SDK licenses and installed
-Platform 36 plus Build Tools 36:
-
-```bash
-cd apps/android
-./gradlew testDebugUnitTest lintDebug assembleDebug
-```
+Watch S4 simulator and real-device delivery remain outside the connected phone
+MVP. Real Watch S4 readiness still depends on Xiaomi partner access.

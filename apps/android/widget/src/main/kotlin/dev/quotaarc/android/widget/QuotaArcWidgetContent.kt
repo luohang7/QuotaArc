@@ -22,6 +22,7 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
+import androidx.glance.semantics.testTag
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -30,13 +31,24 @@ import androidx.glance.unit.ColorProvider
 @Composable
 internal fun QuotaArcWidgetContent(ui: WidgetUiModel) {
     val medium = LocalSize.current.width >= QuotaArcWidget.MEDIUM_SIZE.width
+    QuotaArcWidgetContent(ui = ui, medium = medium)
+}
+
+@Composable
+internal fun QuotaArcWidgetContent(
+    ui: WidgetUiModel,
+    medium: Boolean,
+) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(R.color.widget_background)
             .cornerRadius(24.dp)
             .padding(if (medium) 16.dp else 8.dp)
-            .semantics { contentDescription = ui.accessibilityText },
+            .semantics {
+                contentDescription = ui.accessibilityText
+                testTag = WidgetTestTags.ROOT
+            },
     ) {
         Header(ui)
         Spacer(GlanceModifier.height(if (medium) 6.dp else 4.dp))
@@ -75,6 +87,7 @@ private fun Header(ui: WidgetUiModel) {
                 .padding(horizontal = 8.dp, vertical = 4.dp)
                 .semantics {
                     contentDescription = ui.refreshAccessibilityText
+                    testTag = WidgetTestTags.REFRESH
                 },
             style = TextStyle(
                 color = accentColor(),
@@ -94,7 +107,8 @@ private fun CompactContent(ui: WidgetUiModel) {
             .fillMaxSize()
             .background(R.color.widget_surface)
             .cornerRadius(18.dp)
-            .padding(8.dp),
+            .padding(8.dp)
+            .semantics { testTag = WidgetTestTags.COMPACT },
     ) {
         Text(
             text = primary.title,
@@ -132,7 +146,8 @@ private fun NoQuotaContent(ui: WidgetUiModel) {
             .fillMaxSize()
             .background(R.color.widget_surface)
             .cornerRadius(18.dp)
-            .padding(10.dp),
+            .padding(10.dp)
+            .semantics { testTag = WidgetTestTags.NO_QUOTA },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -158,7 +173,8 @@ private fun MediumContent(ui: WidgetUiModel) {
             .fillMaxSize()
             .background(R.color.widget_surface)
             .cornerRadius(18.dp)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .semantics { testTag = WidgetTestTags.MEDIUM },
     ) {
         ui.todayActivityText?.let { activity ->
             Text(
@@ -226,7 +242,8 @@ private fun EmptyContent(ui: WidgetUiModel) {
             .fillMaxSize()
             .background(R.color.widget_surface)
             .cornerRadius(18.dp)
-            .padding(12.dp),
+            .padding(12.dp)
+            .semantics { testTag = WidgetTestTags.EMPTY },
         verticalAlignment = Alignment.CenterVertically,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -298,3 +315,12 @@ private fun errorColor(): ColorProvider = DayNightColorProvider(
     day = Color(0xFFA12A2A),
     night = Color(0xFFFFB3AD),
 )
+
+internal object WidgetTestTags {
+    const val ROOT = "widget-root"
+    const val REFRESH = "widget-refresh"
+    const val COMPACT = "widget-compact"
+    const val MEDIUM = "widget-medium"
+    const val EMPTY = "widget-empty"
+    const val NO_QUOTA = "widget-no-quota"
+}

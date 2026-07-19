@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">QuotaArc</string>
-    <string name="provisional_build">Provisional development build</string>
+    <string name="provisional_build">Phase 2 connected build</string>
 
     <string name="nav_setup">Setup</string>
     <string name="nav_details">Details</string>
@@ -11,28 +11,33 @@
     <string name="refresh_success">Updated successfully</string>
     <string name="refresh_stale">Refresh failed; showing the last good snapshot</string>
     <string name="refresh_failed">Refresh failed: %1$s</string>
-    <string name="refresh_gate_closed">Refresh unavailable: transport gate is closed</string>
+    <string name="refresh_gate_closed">Refresh unavailable: connect a Collector first</string>
 
     <string name="setup_title">Collector setup</string>
-    <string name="setup_intro">Connection settings remain an in-memory draft until the authenticated Collector transport is approved.</string>
-    <string name="endpoint_label">HTTPS Collector origin</string>
-    <string name="endpoint_supporting">Example: https://collector.example.test:8443</string>
-    <string name="token_label">Pairing token draft</string>
-    <string name="show_token">Show token</string>
-    <string name="hide_token">Hide token</string>
+    <string name="setup_intro">Paste the complete one-time pairing JSON created by the Collector CLI. Testing never saves it; saving repeats the authenticated probe before committing.</string>
+    <string name="pairing_bundle_label">Complete pairing JSON</string>
+    <string name="pairing_bundle_supporting">Includes the HTTPS origin, Collector identity, certificate pin, device token, and scopes.</string>
+    <string name="show_pairing_bundle">Show</string>
+    <string name="hide_pairing_bundle">Hide</string>
     <string name="test_connection">Test connection</string>
+    <string name="testing_connection">Testing…</string>
     <string name="save_connection">Save connection</string>
-    <string name="gate_closed_title">Transport gate closed</string>
-    <string name="gate_closed_body">No connection was attempted and no draft was saved. INTERNET permission and the wire protocol remain disabled until the transport ADR, pairing, and revocation design are accepted.</string>
-    <string name="setup_not_saved">No connection configuration is stored by this build.</string>
-    <string name="endpoint_required">Enter an HTTPS Collector origin.</string>
-    <string name="endpoint_https_required">Only an HTTPS origin is accepted.</string>
-    <string name="endpoint_origin_required">Use an origin only, without credentials, query, fragment, or an API path.</string>
-    <string name="endpoint_port_invalid">The port must be between 1 and 65535.</string>
-    <string name="token_required">Enter the pairing token draft.</string>
-    <string name="token_too_long">The pairing token draft is too long.</string>
+    <string name="saving_connection">Saving…</string>
+    <string name="connection_probe_body">Checking the certificate pin, hostname, device authentication, Collector identity, and summary contract.</string>
+    <string name="connection_save_body">Repeating the strict probe, then encrypting the credential and switching the active Collector.</string>
+    <string name="connection_test_succeeded">Connection test passed</string>
+    <string name="connection_test_succeeded_body">Collector %1$s responded with a valid snapshot. Nothing was saved.</string>
+    <string name="connection_saved">Connection saved</string>
+    <string name="connection_saved_body">Collector %1$s is active. The pairing draft has been cleared.</string>
+    <string name="connection_failed">Connection failed</string>
+    <string name="connection_failed_body">Nothing was changed. Diagnostic: %1$s</string>
+    <string name="pairing_security_note">The device token is shown only when you choose Show. A successful save wraps it with Android Keystore AES-GCM and clears this draft.</string>
+    <string name="pairing_bundle_required">Paste the complete pairing JSON.</string>
+    <string name="pairing_bundle_too_large">The pairing JSON exceeds the 16 KiB limit.</string>
 
     <string name="details_title">Usage details</string>
+    <string name="collector_identity">Configured Collector</string>
+    <string name="collector_not_configured">No Collector is configured</string>
     <string name="snapshot_absent">No verified Collector snapshot is available.</string>
     <string name="updated_at">Generated %1$s</string>
     <string name="stale_snapshot">Stale snapshot</string>

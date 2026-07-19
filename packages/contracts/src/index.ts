@@ -19,6 +19,21 @@ export type {
 export { SOURCE_STATUSES } from "./types.js";
 export { containsUnsafeClientText } from "./security.js";
 export {
+  DEVICE_CAPABILITIES,
+  DeviceContractValidationError,
+  parseCollectorHealth,
+  parseDeviceApiError,
+  parseDevicePairingBundle,
+  parseRefreshReceipt
+} from "./device.js";
+export type {
+  CollectorHealth,
+  DeviceApiError,
+  DeviceCapability,
+  DevicePairingBundle,
+  RefreshReceipt
+} from "./device.js";
+export {
   ContractValidationError,
   assertQuotaArcSummary,
   deriveGlobalStale,

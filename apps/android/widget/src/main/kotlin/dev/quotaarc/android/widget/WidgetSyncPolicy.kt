@@ -1,6 +1,5 @@
 package dev.quotaarc.android.widget
 
-import dev.quotaarc.android.data.DeviceTransportGate
 import java.time.Duration
 
 internal object WidgetSyncPolicy {
@@ -21,8 +20,8 @@ internal object WidgetSyncPolicy {
         keepExisting = true,
     )
 
-    fun canSchedulePeriodic(transportGate: DeviceTransportGate): Boolean =
-        transportGate != DeviceTransportGate.CLOSED
+    fun canSchedulePeriodic(hasConnectionMetadata: Boolean): Boolean =
+        hasConnectionMetadata
 }
 
 internal data class WidgetScheduleSpec(

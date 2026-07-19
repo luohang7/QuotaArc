@@ -2,6 +2,13 @@
 
 Date: 2026-07-19
 
+This document is the baseline phased plan. For implemented code, dated
+evidence, and still-open gates, use
+[implementation status](IMPLEMENTATION_STATUS.md) and
+[release gates](RELEASE_GATES.md). Transport selection was resolved after the
+original Phase 0 decision point by
+[ADR 0003](adr/0003-direct-pinned-tls-device-transport.md).
+
 ## Product objective
 
 Deliver a trustworthy, glanceable view of Codex quota and usage on a Xiaomi 14
@@ -179,17 +186,18 @@ The contract must make provenance explicit:
 The example values are illustrative. Contract tests will use sanitized
 fixtures, not current personal account values.
 
-Planned endpoints:
+Connected Android MVP endpoints:
 
 ```text
 GET  /v1/health
 GET  /v1/summary
-GET  /v1/usage?period=today|week|month&groupBy=model|project|day
 POST /v1/refresh
 ```
 
 `POST /v1/refresh` queues or coalesces a refresh; it does not proxy arbitrary
-Codex methods.
+Codex methods. A separately filtered `/v1/usage` route from the original
+planning baseline is deferred and is not exposed by the accepted ADR 0003
+transport.
 
 ## Session index design
 
@@ -430,17 +438,17 @@ Exit criteria:
 
 ## Production transport decision
 
-The Collector defaults to loopback. A production mobile path is not selected
-until Phase 0 proves it.
+Resolved by accepted ADR 0003:
 
-Candidate order:
-
-1. Android app reaches a protected Collector endpoint; Android forwards the
-   sanitized snapshot to Watch via interconnect.
-2. If interconnect access is unavailable, use a minimal sanitized relay with
-   end-to-end authenticated snapshots.
-3. Direct Watch-to-Collector access is a development/simulator fallback, not
-   the preferred release design.
+1. The Collector remains loopback-only by default.
+2. Xiaomi 14 reaches a concrete same-LAN Collector address only after explicit
+   opt-in, using TLS 1.3, a paired leaf-certificate pin, platform hostname
+   verification, and device-scoped HMAC requests.
+3. Only strict aggregate v1 health, summary, and refresh routes are exposed.
+4. Android-to-Watch interconnect remains the preferred later Watch path,
+   subject to Xiaomi partner validation.
+5. No hosted relay or direct Watch production path is selected for the Android
+   MVP.
 
 Do not expose an unauthenticated app-server WebSocket or raw LAN HTTP endpoint.
 
@@ -500,16 +508,17 @@ The MVP is complete when:
 7. Real Watch S4 status is reported separately and only marked complete after
    actual installation and transfer evidence.
 
-## Immediate next implementation step
+## Remaining execution order
 
-Start Phase 0 with the Collector contract and redacted fixtures, then build a
-small CLI proof:
+The Phase 0 CLI proof, Phase 1 core source, and Phase 2B connected Android
+source now exist. The remaining order is:
 
-```text
-quotaarc doctor
-quotaarc collect --once
-quotaarc usage --period today --group-by model
-```
-
-That proof must pass against both generated fixtures and the current local
-Codex installation before Android or Watch UI begins consuming the contract.
+1. keep repository CI, Android lint/release, and managed-device WorkManager
+   gates green on the exact pushed revision;
+2. execute the Xiaomi 14/HyperOS physical matrix, including identity switching,
+   reboot, network recovery, battery saver, and an overnight Doze sample;
+3. close the durable warm-scan, appended-byte-only, restart-safe last-good, and
+   24-hour Collector soak gates;
+4. begin the Watch S4 simulator phase after AIoT-IDE is available;
+5. keep real Watch readiness separately blocked until Xiaomi partner access and
+   real-device evidence exist.

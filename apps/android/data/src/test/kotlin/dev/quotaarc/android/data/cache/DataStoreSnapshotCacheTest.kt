@@ -27,6 +27,7 @@ class DataStoreSnapshotCacheTest {
 
         val committed = store.update { current ->
             current.copy(
+                collectorIdentity = "collector-a",
                 lastGood = StoredSnapshot(
                     summaryJson = """{"schemaVersion":1}""",
                     receivedAtEpochMillis = 123,
@@ -39,7 +40,32 @@ class DataStoreSnapshotCacheTest {
         }
 
         assertEquals(committed, store.read())
+        assertEquals("collector-a", store.read().collectorIdentity)
         assertEquals(123L, store.read().lastGood?.receivedAtEpochMillis)
         assertNull(store.read().latestValidated)
     }
+
+    @Test
+    fun `read-only view evaluates failures without rebinding persistent identity`() =
+        runTest {
+            val file = temporaryFolder.newFile("readonly.preferences_pb")
+                .also { it.delete() }
+            val store = DataStoreSnapshotCache(
+                PreferenceDataStoreFactory.create(
+                    scope = backgroundScope,
+                    produceFile = { file },
+                ),
+            )
+            store.update { current ->
+                current.copy(collectorIdentity = "collector-real")
+            }
+            val readOnly = ReadOnlySnapshotCacheStore(store)
+
+            val ephemeral = readOnly.update { current ->
+                current.copy(collectorIdentity = "credential-unavailable")
+            }
+
+            assertEquals("credential-unavailable", ephemeral.collectorIdentity)
+            assertEquals("collector-real", store.read().collectorIdentity)
+        }
 }

@@ -23,4 +23,13 @@ sign/
 *.jks
 *.keystore
 *.p12
+*.pfx
 *.pem
+*.key
+
+# Collector device registries contain authentication-equivalent verification
+# keys and must be handled as secrets even though plaintext device tokens are
+# never stored.
+**/.quotaarc/
+**/devices.json
+**/devices.json.lock

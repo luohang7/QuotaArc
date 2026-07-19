@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">QuotaArc</string>
-    <string name="provisional_build">临时开发版本</string>
+    <string name="provisional_build">第二阶段联网版本</string>
 
     <string name="nav_setup">设置</string>
     <string name="nav_details">详情</string>
@@ -11,28 +11,33 @@
     <string name="refresh_success">刷新成功</string>
     <string name="refresh_stale">刷新失败，正在显示最后一次有效快照</string>
     <string name="refresh_failed">刷新失败：%1$s</string>
-    <string name="refresh_gate_closed">无法刷新：传输门禁尚未开放</string>
+    <string name="refresh_gate_closed">无法刷新：请先连接 Collector</string>
 
     <string name="setup_title">Collector 设置</string>
-    <string name="setup_intro">在认证 Collector 传输方案获批前，连接设置只作为内存草稿存在。</string>
-    <string name="endpoint_label">HTTPS Collector 来源地址</string>
-    <string name="endpoint_supporting">示例：https://collector.example.test:8443</string>
-    <string name="token_label">配对令牌草稿</string>
-    <string name="show_token">显示令牌</string>
-    <string name="hide_token">隐藏令牌</string>
+    <string name="setup_intro">请粘贴 Collector 命令行生成的完整一次性配对 JSON。测试不会保存；保存前会再次完成认证探测。</string>
+    <string name="pairing_bundle_label">完整配对 JSON</string>
+    <string name="pairing_bundle_supporting">其中包含 HTTPS 来源、Collector 身份、证书指纹、设备令牌和权限范围。</string>
+    <string name="show_pairing_bundle">显示</string>
+    <string name="hide_pairing_bundle">隐藏</string>
     <string name="test_connection">测试连接</string>
+    <string name="testing_connection">正在测试…</string>
     <string name="save_connection">保存连接</string>
-    <string name="gate_closed_title">传输门禁尚未开放</string>
-    <string name="gate_closed_body">未发起连接，也未保存草稿。在传输 ADR、配对和撤销设计获批前，INTERNET 权限及线上协议均保持关闭。</string>
-    <string name="setup_not_saved">此版本不会保存任何连接配置。</string>
-    <string name="endpoint_required">请输入 HTTPS Collector 来源地址。</string>
-    <string name="endpoint_https_required">只接受 HTTPS 来源地址。</string>
-    <string name="endpoint_origin_required">请只填写来源地址，不要包含凭据、查询参数、片段或 API 路径。</string>
-    <string name="endpoint_port_invalid">端口必须在 1 到 65535 之间。</string>
-    <string name="token_required">请输入配对令牌草稿。</string>
-    <string name="token_too_long">配对令牌草稿过长。</string>
+    <string name="saving_connection">正在保存…</string>
+    <string name="connection_probe_body">正在检查证书指纹、主机名、设备认证、Collector 身份以及摘要契约。</string>
+    <string name="connection_save_body">正在重新执行严格探测，随后加密凭据并切换当前 Collector。</string>
+    <string name="connection_test_succeeded">连接测试通过</string>
+    <string name="connection_test_succeeded_body">Collector %1$s 返回了有效快照，未保存任何内容。</string>
+    <string name="connection_saved">连接已保存</string>
+    <string name="connection_saved_body">Collector %1$s 已启用，配对草稿已清空。</string>
+    <string name="connection_failed">连接失败</string>
+    <string name="connection_failed_body">未修改现有连接。诊断：%1$s</string>
+    <string name="pairing_security_note">只有点击“显示”才会展示设备令牌。保存成功后，令牌会由 Android Keystore AES-GCM 包装，并从输入框清除。</string>
+    <string name="pairing_bundle_required">请粘贴完整配对 JSON。</string>
+    <string name="pairing_bundle_too_large">配对 JSON 超过 16 KiB 上限。</string>
 
     <string name="details_title">用量详情</string>
+    <string name="collector_identity">已配置的 Collector</string>
+    <string name="collector_not_configured">尚未配置 Collector</string>
     <string name="snapshot_absent">暂无经过验证的 Collector 快照。</string>
     <string name="updated_at">生成于 %1$s</string>
     <string name="stale_snapshot">陈旧快照</string>

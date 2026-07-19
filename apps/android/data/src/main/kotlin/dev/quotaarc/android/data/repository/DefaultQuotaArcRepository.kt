@@ -31,17 +31,18 @@ import java.time.Instant
 internal class DefaultQuotaArcRepository(
     private val api: QuotaArcDeviceApi,
     private val cache: SnapshotCacheStore,
+    private val collectorIdentity: CollectorIdentity,
     parentScope: CoroutineScope,
     private val codec: QuotaArcV1JsonCodec = QuotaArcV1JsonCodec(),
     private val clock: QuotaArcClock = SystemQuotaArcClock,
     private val staleAfter: Duration = Duration.ofMinutes(60),
-) : QuotaArcRepository {
+) : QuotaArcRepository, DeactivatableQuotaArcRepository {
+    private val repositoryJob = SupervisorJob(parentScope.coroutineContext[Job])
     private val scope = CoroutineScope(
-        parentScope.coroutineContext +
-            SupervisorJob(parentScope.coroutineContext[Job]),
+        parentScope.coroutineContext + repositoryJob,
     )
     private val inFlightMutex = Mutex()
-    private var inFlight: Deferred<RefreshResult>? = null
+    private var inFlight: InFlightRefresh? = null
 
     init {
         require(!staleAfter.isNegative && !staleAfter.isZero) {
@@ -74,25 +75,47 @@ internal class DefaultQuotaArcRepository(
             // LAZY deferreds are not active before start. Completion, rather
             // than activity, is the safe predicate for callers racing between
             // leaving this mutex and starting the shared request.
-            inFlight?.takeIf { !it.isCompleted } ?: createRefresh(trigger)
+            val current = inFlight?.takeIf { !it.result.isCompleted }
+            when {
+                current == null -> createRefresh(trigger)
+                trigger == RefreshTrigger.MANUAL &&
+                    current.trigger != RefreshTrigger.MANUAL ->
+                    createRefresh(
+                        trigger = RefreshTrigger.MANUAL,
+                        predecessor = current.result,
+                    )
+                else -> current
+            }
         }
-        shared.start()
-        return shared.await()
+        shared.result.start()
+        return shared.result.await()
     }
 
-    private fun createRefresh(trigger: RefreshTrigger): Deferred<RefreshResult> {
+    override fun deactivate() {
+        repositoryJob.cancel()
+    }
+
+    private fun createRefresh(
+        trigger: RefreshTrigger,
+        predecessor: Deferred<RefreshResult>? = null,
+    ): InFlightRefresh {
         val created = scope.async(start = CoroutineStart.LAZY) {
+            // A manual request that arrives behind another trigger is a
+            // serialized follow-up. Awaiting the predecessor preserves the
+            // one-request-at-a-time boundary without discarding manual intent.
+            predecessor?.await()
             performRefresh(trigger)
         }
-        inFlight = created
+        val operation = InFlightRefresh(trigger = trigger, result = created)
+        inFlight = operation
         created.invokeOnCompletion {
             scope.launch {
                 inFlightMutex.withLock {
-                    if (inFlight === created) inFlight = null
+                    if (inFlight?.result === created) inFlight = null
                 }
             }
         }
-        return created
+        return operation
     }
 
     private suspend fun performRefresh(trigger: RefreshTrigger): RefreshResult {
@@ -160,7 +183,8 @@ internal class DefaultQuotaArcRepository(
         var rejection: RefreshFailure? = null
 
         val committed = try {
-            cache.update { current ->
+            cache.update { envelope ->
+                val current = envelope.boundToCollector()
                 val existingGood = current.lastGood?.decodeOrNull()
                 val isOlder =
                     existingGood != null &&
@@ -226,7 +250,8 @@ internal class DefaultQuotaArcRepository(
     private suspend fun finishFailure(failure: RefreshFailure): RefreshResult {
         val now = clock.now()
         val committed = try {
-            cache.update { current ->
+            cache.update { envelope ->
+                val current = envelope.boundToCollector()
                 current.copy(lastAttempt = failure.toStoredAttempt(now))
             }
         } catch (error: CancellationException) {
@@ -244,6 +269,9 @@ internal class DefaultQuotaArcRepository(
         envelope: SnapshotCacheEnvelope,
         now: Instant,
     ): RepositoryState {
+        if (envelope.collectorIdentity != collectorIdentity.stableId) {
+            return RepositoryState.Empty
+        }
         val snapshot = envelope.lastGood?.decodeOrNull()
         val attempt = envelope.lastAttempt
         if (snapshot == null) {
@@ -280,6 +308,16 @@ internal class DefaultQuotaArcRepository(
             )
         } catch (_: Exception) {
             null
+        }
+
+    private fun SnapshotCacheEnvelope.boundToCollector(): SnapshotCacheEnvelope =
+        if (collectorIdentity == this@DefaultQuotaArcRepository.collectorIdentity.stableId) {
+            this
+        } else {
+            SnapshotCacheEnvelope(
+                collectorIdentity =
+                    this@DefaultQuotaArcRepository.collectorIdentity.stableId,
+            )
         }
 
     private fun QuotaArcSummary.isRenderable(): Boolean {
@@ -329,6 +367,11 @@ internal class DefaultQuotaArcRepository(
         )
     }
 }
+
+private data class InFlightRefresh(
+    val trigger: RefreshTrigger,
+    val result: Deferred<RefreshResult>,
+)
 
 private fun Duration.coerceAtLeast(minimum: Duration): Duration =
     if (this < minimum) minimum else this

@@ -6,10 +6,15 @@ import { Ajv2020, type AnySchema } from "ajv/dist/2020.js";
 
 import {
   ContractValidationError,
+  DeviceContractValidationError,
   assertQuotaArcSummary,
   deriveGlobalStale,
   getQuotaArcSummaryIssues,
+  parseCollectorHealth,
+  parseDeviceApiError,
+  parseDevicePairingBundle,
   parseQuotaArcSummary,
+  parseRefreshReceipt,
   quotaArcSummarySchemaUrl,
   validateQuotaArcSummary,
   type AccountDailyTokenUsage,
@@ -213,4 +218,87 @@ test("a parsed summary retains its stable static type", async () => {
     await readJson("examples/summary.ok.json")
   );
   assert.equal(value.sources.quota.kind, "codex_app_server");
+});
+
+test("device health, refresh, error, and pairing contracts are strict", async () => {
+  const collectorId = "qac_abcdefghijklmnopqrstuv";
+  const health = {
+    schemaVersion: 1,
+    collectorId,
+    generatedAt: "2026-07-19T10:00:00Z",
+    capabilities: ["summary.read", "refresh.write"]
+  };
+  const receipt = {
+    schemaVersion: 1,
+    collectorId,
+    requestId: "qar_abcdefghijklmnop",
+    acceptedAt: "2026-07-19T10:00:00Z",
+    completedAt: "2026-07-19T10:00:01Z",
+    status: "refreshed",
+    summaryGeneratedAt: "2026-07-19T10:00:01Z"
+  };
+  const error = {
+    schemaVersion: 1,
+    error: {
+      code: "auth.required",
+      message: "Device authentication is required",
+      retryable: false
+    }
+  };
+  const pairing = {
+    pairingVersion: 1,
+    endpoint: "https://collector.example.test:8443",
+    collectorId,
+    certificateSha256: "A".repeat(64),
+    deviceToken: `qa1.${"d".repeat(12)}.${"s".repeat(43)}`,
+    scopes: ["summary.read", "refresh.write"]
+  };
+
+  assert.equal(parseCollectorHealth(health).collectorId, collectorId);
+  assert.equal(parseRefreshReceipt(receipt).status, "refreshed");
+  assert.equal(parseDeviceApiError(error).error.code, "auth.required");
+  assert.equal(parseDevicePairingBundle(pairing).endpoint, pairing.endpoint);
+
+  const schemaNames = [
+    "device-health",
+    "refresh-receipt",
+    "device-error",
+    "pairing-bundle"
+  ];
+  const schemaValues = [health, receipt, error, pairing];
+  const ajv = new Ajv2020({ allErrors: true, strict: true });
+  for (const [index, schemaName] of schemaNames.entries()) {
+    const schema = await readJson(
+      `schema/v1/${schemaName}.schema.json`
+    ) as AnySchema;
+    const validate = ajv.compile(schema);
+    assert.equal(
+      validate(schemaValues[index]),
+      true,
+      `${schemaName}: ${JSON.stringify(validate.errors)}`
+    );
+  }
+
+  assert.throws(
+    () => parseCollectorHealth({ ...health, privatePath: "/Users/alice" }),
+    DeviceContractValidationError
+  );
+  assert.throws(
+    () => parseRefreshReceipt({ ...receipt, completedAt: "2026-07-19T09:59:59Z" }),
+    DeviceContractValidationError
+  );
+  assert.throws(
+    () => parseDeviceApiError({
+      ...error,
+      error: { ...error.error, message: "/Users/alice/private" }
+    }),
+    DeviceContractValidationError
+  );
+  assert.throws(
+    () => parseDevicePairingBundle({
+      ...pairing,
+      endpoint: "http://collector.example.test"
+    }),
+    DeviceContractValidationError
+  );
 });

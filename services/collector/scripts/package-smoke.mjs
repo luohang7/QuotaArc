@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   mkdtemp,
   mkdir,
+  readFile,
   readdir,
   rm,
   stat,
@@ -15,6 +16,7 @@ const temporary = await mkdtemp(join(tmpdir(), "quotaarc-package-smoke-"));
 const archiveDirectory = join(temporary, "archive");
 const installDirectory = join(temporary, "install");
 const fixturePath = join(temporary, "collector-fixture.json");
+const deviceStateDirectory = join(temporary, "device-state");
 
 try {
   await mkdir(archiveDirectory, { recursive: true });
@@ -95,6 +97,53 @@ try {
   assert.equal(smoke.stdout.includes(temporary), false);
   assert.equal(smoke.stdout.includes("fixture-secret"), false);
 
+  const deviceEnvironment = {
+    QUOTAARC_DEVICE_STATE_DIRECTORY: deviceStateDirectory,
+  };
+  const tls = JSON.parse(run(
+    executable,
+    ["device", "tls-init", "--host", "127.0.0.1"],
+    temporary,
+    deviceEnvironment,
+  ).stdout);
+  assert.match(tls.certificateSha256, /^[A-F0-9]{64}$/u);
+  const pairing = JSON.parse(run(
+    executable,
+    [
+      "device",
+      "issue",
+      "--label",
+      "Package smoke phone",
+      "--endpoint",
+      "https://127.0.0.1:8443",
+    ],
+    temporary,
+    deviceEnvironment,
+  ).stdout);
+  assert.equal(pairing.pairingVersion, 1);
+  assert.match(pairing.deviceToken, /^qa1\./u);
+  const registryText = await readFile(
+    join(deviceStateDirectory, "devices.json"),
+    "utf8",
+  );
+  assert.equal(registryText.includes(pairing.deviceToken), false);
+  assert.equal(registryText.includes(pairing.deviceToken.split(".")[2]), false);
+  const devices = JSON.parse(run(
+    executable,
+    ["device", "list"],
+    temporary,
+    deviceEnvironment,
+  ).stdout);
+  assert.equal(devices.devices.length, 1);
+  assert.equal(JSON.stringify(devices).includes("deviceToken"), false);
+  const revoked = JSON.parse(run(
+    executable,
+    ["device", "revoke", "--id", devices.devices[0].deviceId],
+    temporary,
+    deviceEnvironment,
+  ).stdout);
+  assert.ok(revoked.revokedAt);
+
   const archiveInfo = await stat(archivePath);
   process.stdout.write(
     `${JSON.stringify({
@@ -107,13 +156,14 @@ try {
   await rm(temporary, { recursive: true, force: true });
 }
 
-function run(command, args, cwd) {
+function run(command, args, cwd, extraEnvironment = {}) {
   const result = spawnSync(command, args, {
     cwd,
     encoding: "utf8",
     env: {
       ...process.env,
       npm_config_update_notifier: "false",
+      ...extraEnvironment,
     },
     maxBuffer: 10 * 1024 * 1024,
   });

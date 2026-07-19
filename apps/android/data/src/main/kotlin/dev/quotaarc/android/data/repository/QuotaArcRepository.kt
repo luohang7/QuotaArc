@@ -9,3 +9,7 @@ interface QuotaArcRepository {
 
     suspend fun refresh(trigger: RefreshTrigger = RefreshTrigger.MANUAL): RefreshResult
 }
+
+internal interface DeactivatableQuotaArcRepository {
+    fun deactivate()
+}
