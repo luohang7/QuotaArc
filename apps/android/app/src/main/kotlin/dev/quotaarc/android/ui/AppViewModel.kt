@@ -2,6 +2,10 @@ package dev.quotaarc.android.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.quotaarc.android.data.connection.ConnectionActivationResult
+import dev.quotaarc.android.data.connection.ConnectionRestoreResult
+import dev.quotaarc.android.data.connection.ConnectionTestResult
+import dev.quotaarc.android.data.connection.QuotaArcConnectionCoordinator
 import dev.quotaarc.android.data.repository.QuotaArcRepository
 import dev.quotaarc.android.data.repository.RefreshFailureKind
 import dev.quotaarc.android.data.repository.RefreshResult
@@ -21,9 +25,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 internal class AppViewModel(
-    private val repository: QuotaArcRepository,
+    private val connectionManager: QuotaArcConnectionCoordinator,
+    private val onConnectionActivated: () -> Unit = {},
+    private val onSnapshotChanged: suspend () -> Unit = {},
 ) : ViewModel() {
+    private val repository: QuotaArcRepository = connectionManager.repository
     private val mutableState = MutableStateFlow(AppUiState())
+    private var connectionTransitionRevision = 0L
     val state: StateFlow<AppUiState> = mutableState.asStateFlow()
 
     init {
@@ -36,72 +44,180 @@ internal class AppViewModel(
                 }
                 .collect(::applyRepositoryState)
         }
+        val initialRestoreRevision = connectionTransitionRevision
+        viewModelScope.launch {
+            val restored = try {
+                connectionManager.awaitInitialRestore()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                ConnectionRestoreResult.Invalid
+            }
+            if (initialRestoreRevision != connectionTransitionRevision) {
+                return@launch
+            }
+            when (restored) {
+                is ConnectionRestoreResult.Ready,
+                is ConnectionRestoreResult.CredentialUnavailable,
+                -> {
+                    val metadata = when (restored) {
+                        is ConnectionRestoreResult.Ready -> restored.metadata
+                        is ConnectionRestoreResult.CredentialUnavailable ->
+                            restored.metadata
+                    }
+                    mutableState.update { current ->
+                        current.copy(
+                            destination = if (
+                                current.setup.pairingJson.isEmpty() &&
+                                current.setup.attempt == SetupAttemptUi.None
+                            ) {
+                                AppDestination.DETAILS
+                            } else {
+                                current.destination
+                            },
+                            collectorId = metadata.collectorId,
+                            refresh = RefreshUi.Running,
+                        )
+                    }
+                    applyRefreshResult(callRefresh(RefreshTrigger.FOREGROUND))
+                    runSnapshotCallback()
+                }
+                ConnectionRestoreResult.Absent -> Unit
+                ConnectionRestoreResult.Invalid -> {
+                    mutableState.update { current ->
+                        current.copy(
+                            destination = AppDestination.SETUP,
+                            collectorId = null,
+                            refresh = RefreshUi.Failed("connection.restore_invalid"),
+                        )
+                    }
+                }
+            }
+        }
     }
 
     fun navigate(destination: AppDestination) {
         mutableState.update { it.copy(destination = destination) }
     }
 
-    fun updateEndpoint(value: String) {
+    fun updatePairingJson(value: String) {
+        if (isSetupBusy()) return
         mutableState.update { current ->
             current.copy(
                 setup = current.setup.copy(
-                    endpoint = value,
-                    endpointError = null,
+                    pairingJson = value,
+                    pairingError = null,
                     attempt = SetupAttemptUi.None,
                 ),
             )
         }
     }
 
-    fun updateToken(value: String) {
+    fun togglePairingVisibility() {
+        if (isSetupBusy()) return
         mutableState.update { current ->
             current.copy(
                 setup = current.setup.copy(
-                    token = value,
-                    tokenError = null,
-                    attempt = SetupAttemptUi.None,
+                    pairingVisible = !current.setup.pairingVisible,
                 ),
             )
         }
     }
 
-    fun toggleTokenVisibility() {
-        mutableState.update { current ->
-            current.copy(
-                setup = current.setup.copy(tokenVisible = !current.setup.tokenVisible),
-            )
-        }
-    }
-
-    fun attemptConnectionOrSave() {
-        val draft = mutableState.value.setup
-        val validation = SetupDraftValidator.validate(draft.endpoint, draft.token)
-        if (!validation.isValid) {
+    fun testConnection() {
+        if (isSetupBusy()) return
+        val pairingJson = validatedPairingDraft() ?: return
+        viewModelScope.launch {
+            mutableState.update { current ->
+                current.copy(
+                    setup = current.setup.copy(attempt = SetupAttemptUi.Testing),
+                )
+            }
+            val result = try {
+                connectionManager.test(pairingJson)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                null
+            }
             mutableState.update { current ->
                 current.copy(
                     setup = current.setup.copy(
-                        endpointError = validation.endpointError,
-                        tokenError = validation.tokenError,
-                        attempt = SetupAttemptUi.None,
+                        attempt = when (result) {
+                            is ConnectionTestResult.Success ->
+                                SetupAttemptUi.TestSucceeded(
+                                    collectorId = result.metadata.collectorId,
+                                )
+                            is ConnectionTestResult.Failure ->
+                                SetupAttemptUi.Failed(result.failure.code)
+                            null ->
+                                SetupAttemptUi.Failed("connection.test_failed")
+                        },
                     ),
                 )
             }
-            return
         }
+    }
 
-        // The draft is intentionally not passed to a transport or persistence
-        // API. Clear the secret immediately after reporting the closed gate.
-        mutableState.update { current ->
-            current.copy(
-                setup = current.setup.copy(
-                    token = "",
-                    tokenVisible = false,
-                    endpointError = null,
-                    tokenError = null,
-                    attempt = SetupAttemptUi.GateClosed,
-                ),
-            )
+    fun saveConnection() {
+        if (isSetupBusy()) return
+        val pairingJson = validatedPairingDraft() ?: return
+        connectionTransitionRevision += 1
+        viewModelScope.launch {
+            mutableState.update { current ->
+                current.copy(
+                    setup = current.setup.copy(attempt = SetupAttemptUi.Saving),
+                )
+            }
+            val result = try {
+                connectionManager.testAndSave(pairingJson)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                null
+            }
+            when (result) {
+                is ConnectionActivationResult.Success -> {
+                    mutableState.update { current ->
+                        current.copy(
+                            destination = AppDestination.DETAILS,
+                            collectorId = result.metadata.collectorId,
+                            setup = current.setup.copy(
+                                pairingJson = "",
+                                pairingError = null,
+                                pairingVisible = false,
+                                attempt = SetupAttemptUi.Saved(
+                                    collectorId = result.metadata.collectorId,
+                                ),
+                            ),
+                            refresh = RefreshUi.Running,
+                        )
+                    }
+                    runCatching(onConnectionActivated)
+                    applyRefreshResult(callRefresh(RefreshTrigger.FOREGROUND))
+                    runSnapshotCallback()
+                }
+                is ConnectionActivationResult.Failure -> {
+                    mutableState.update { current ->
+                        current.copy(
+                            setup = current.setup.copy(
+                                attempt = SetupAttemptUi.Failed(result.failure.code),
+                            ),
+                        )
+                    }
+                }
+                null -> {
+                    mutableState.update { current ->
+                        current.copy(
+                            setup = current.setup.copy(
+                                attempt = SetupAttemptUi.Failed(
+                                    "connection.save_failed",
+                                ),
+                            ),
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -110,40 +226,86 @@ internal class AppViewModel(
 
         viewModelScope.launch {
             mutableState.update { it.copy(refresh = RefreshUi.Running) }
-            val result = try {
-                repository.refresh(RefreshTrigger.MANUAL)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                null
-            }
+            applyRefreshResult(callRefresh(RefreshTrigger.MANUAL))
+            runSnapshotCallback()
+        }
+    }
+
+    private fun validatedPairingDraft(): String? {
+        val draft = mutableState.value.setup.pairingJson
+        val validation = SetupDraftValidator.validate(draft)
+        if (!validation.isValid) {
             mutableState.update { current ->
-                when (result) {
-                    is RefreshResult.Updated -> current.copy(
-                        detail = result.content.toDetail(),
-                        refresh = RefreshUi.Success,
-                    )
-
-                    is RefreshResult.UsingCache -> current.copy(
-                        detail = result.content.toDetail(),
-                        refresh = if (result.failure.kind == RefreshFailureKind.GATE_CLOSED) {
-                            RefreshUi.GateClosed
-                        } else {
-                            RefreshUi.StaleFallback
-                        },
-                    )
-
-                    is RefreshResult.Failed -> current.copy(
-                        refresh = if (result.failure.kind == RefreshFailureKind.GATE_CLOSED) {
-                            RefreshUi.GateClosed
-                        } else {
-                            RefreshUi.Failed(result.failure.code)
-                        },
-                    )
-
-                    null -> current.copy(refresh = RefreshUi.Failed("refresh_unavailable"))
-                }
+                current.copy(
+                    setup = current.setup.copy(
+                        pairingError = validation.pairingError,
+                        attempt = SetupAttemptUi.None,
+                    ),
+                )
             }
+            return null
+        }
+        return draft
+    }
+
+    private fun isSetupBusy(): Boolean =
+        when (mutableState.value.setup.attempt) {
+            SetupAttemptUi.Testing,
+            SetupAttemptUi.Saving,
+            -> true
+            else -> false
+        }
+
+    private suspend fun callRefresh(trigger: RefreshTrigger): RefreshResult? =
+        try {
+            repository.refresh(trigger)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            null
+        }
+
+    private fun applyRefreshResult(result: RefreshResult?) {
+        mutableState.update { current ->
+            when (result) {
+                is RefreshResult.Updated -> current.copy(
+                    detail = result.content.toDetail(),
+                    refresh = RefreshUi.Success,
+                )
+                is RefreshResult.UsingCache -> current.copy(
+                    detail = result.content.toDetail(),
+                    refresh = if (
+                        result.failure.kind == RefreshFailureKind.GATE_CLOSED
+                    ) {
+                        RefreshUi.GateClosed
+                    } else {
+                        RefreshUi.StaleFallback
+                    },
+                )
+                is RefreshResult.Failed -> current.copy(
+                    refresh = if (
+                        result.failure.kind == RefreshFailureKind.GATE_CLOSED
+                    ) {
+                        RefreshUi.GateClosed
+                    } else {
+                        RefreshUi.Failed(result.failure.code)
+                    },
+                )
+                null -> current.copy(
+                    refresh = RefreshUi.Failed("refresh_unavailable"),
+                )
+            }
+        }
+    }
+
+    private suspend fun runSnapshotCallback() {
+        try {
+            onSnapshotChanged()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            // Widget invalidation is best effort and cannot change repository
+            // or connection state.
         }
     }
 
@@ -151,7 +313,9 @@ internal class AppViewModel(
         mutableState.update { current ->
             when (repositoryState) {
                 RepositoryState.Empty -> current.copy(detail = DetailUiModel.empty())
-                is RepositoryState.Content -> current.copy(detail = repositoryState.toDetail())
+                is RepositoryState.Content -> current.copy(
+                    detail = repositoryState.toDetail(),
+                )
                 is RepositoryState.Error -> current.copy(
                     detail = DetailUiModel.empty(),
                     refresh = if (

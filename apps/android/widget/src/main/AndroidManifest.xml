@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Deliberately no INTERNET permission while authenticated transport is gated. -->
     <application>
         <receiver
             android:name=".QuotaArcWidgetReceiver"

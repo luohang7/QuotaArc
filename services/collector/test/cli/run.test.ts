@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
+import { readFile, rm, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { mkdtemp } from "node:fs/promises";
 import test from "node:test";
+import { parseDevicePairingBundle } from "@quotaarc/contracts";
 import { runCli, type CliIo } from "../../src/cli/index.js";
 import type { LiveCollectorPorts } from "../../src/adapters/live.js";
+import { resolveCollectorConfig } from "../../src/config/index.js";
 import type { CollectorPorts, LocalUsageData } from "../../src/snapshot/index.js";
 
 function captureIo(): { io: CliIo; stdout: string[]; stderr: string[] } {
@@ -143,4 +149,96 @@ test("default live ports are injected and always closed", async () => {
   assert.equal(code, 0);
   assert.equal(factoryCalls, 1);
   assert.equal(closes, 1);
+});
+
+test("device CLI creates TLS identity, issues a one-time bundle, lists, and revokes", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "quotaarc-device-cli-"));
+  try {
+    const config = resolveCollectorConfig({}, temporary);
+    const tlsIo = captureIo();
+    assert.equal(
+      await runCli(["device", "tls-init", "--host", "127.0.0.1"], {
+        config,
+        io: tlsIo.io,
+      }),
+      0,
+    );
+    const tls = JSON.parse(tlsIo.stdout[0] ?? "{}") as {
+      certificateSha256?: string;
+    };
+    assert.match(tls.certificateSha256 ?? "", /^[A-F0-9]{64}$/u);
+    assert.equal((await stat(config.tlsPrivateKeyFile)).mode & 0o077, 0);
+
+    const mismatchedIo = captureIo();
+    assert.equal(
+      await runCli([
+        "device",
+        "issue",
+        "--label",
+        "Wrong host",
+        "--endpoint",
+        "https://localhost:8443",
+      ], {
+        config,
+        io: mismatchedIo.io,
+      }),
+      2,
+    );
+    assert.deepEqual(JSON.parse(mismatchedIo.stderr[0] ?? "{}"), {
+      error: { code: "tls_certificate_host_mismatch" },
+    });
+    await assert.rejects(stat(config.deviceRegistryFile), { code: "ENOENT" });
+
+    const issueIo = captureIo();
+    assert.equal(
+      await runCli([
+        "device",
+        "issue",
+        "--label",
+        "Xiaomi 14",
+        "--endpoint",
+        "https://127.0.0.1:8443",
+      ], {
+        config,
+        io: issueIo.io,
+        now: () => new Date("2026-07-19T10:00:00Z"),
+      }),
+      0,
+    );
+    const pairing = parseDevicePairingBundle(
+      JSON.parse(issueIo.stdout[0] ?? "{}"),
+    );
+    const registryText = await readFile(config.deviceRegistryFile, "utf8");
+    assert.equal(registryText.includes(pairing.deviceToken), false);
+    assert.equal(registryText.includes(pairing.deviceToken.split(".")[2]!), false);
+
+    const listIo = captureIo();
+    assert.equal(
+      await runCli(["device", "list"], { config, io: listIo.io }),
+      0,
+    );
+    const listed = JSON.parse(listIo.stdout[0] ?? "{}") as {
+      devices?: { deviceId?: string; revokedAt?: string | null }[];
+    };
+    const deviceId = listed.devices?.[0]?.deviceId;
+    assert.ok(deviceId);
+    assert.equal(listed.devices?.[0]?.revokedAt, null);
+    assert.equal(listIo.stdout.join("").includes("deviceToken"), false);
+
+    const revokeIo = captureIo();
+    assert.equal(
+      await runCli(["device", "revoke", "--id", deviceId], {
+        config,
+        io: revokeIo.io,
+        now: () => new Date("2026-07-19T10:01:00Z"),
+      }),
+      0,
+    );
+    const revoked = JSON.parse(revokeIo.stdout[0] ?? "{}") as {
+      revokedAt?: string | null;
+    };
+    assert.equal(revoked.revokedAt, "2026-07-19T10:01:00.000Z");
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
 });

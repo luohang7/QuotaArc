@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import dev.quotaarc.android.R
 import dev.quotaarc.android.ui.model.DetailUiModel
@@ -35,6 +36,7 @@ import dev.quotaarc.android.ui.model.UsageBreakdownUi
 
 @Composable
 internal fun DetailScreen(
+    collectorId: String?,
     model: DetailUiModel,
     refresh: RefreshUi,
 ) {
@@ -52,6 +54,8 @@ internal fun DetailScreen(
                 headline = true,
             )
         }
+
+        item { CollectorIdentityCard(collectorId) }
 
         item { RefreshCard(refresh) }
 
@@ -110,6 +114,37 @@ internal fun DetailScreen(
         item { SectionHeading(stringResource(R.string.sources_section)) }
         items(model.sources, key = { it.kind.name }) { source ->
             SourceCard(source)
+        }
+    }
+}
+
+@Composable
+private fun CollectorIdentityCard(collectorId: String?) {
+    Card {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.collector_identity),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = collectorId
+                    ?: stringResource(R.string.collector_not_configured),
+                fontFamily = if (collectorId == null) {
+                    FontFamily.Default
+                } else {
+                    FontFamily.Monospace
+                },
+                color = if (collectorId == null) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
         }
     }
 }

@@ -6,26 +6,24 @@ internal enum class AppDestination {
 }
 
 internal data class SetupDraftUi(
-    val endpoint: String = "",
-    val token: String = "",
-    val endpointError: SetupFieldError? = null,
-    val tokenError: SetupFieldError? = null,
-    val tokenVisible: Boolean = false,
+    val pairingJson: String = "",
+    val pairingError: SetupFieldError? = null,
+    val pairingVisible: Boolean = false,
     val attempt: SetupAttemptUi = SetupAttemptUi.None,
 )
 
 internal enum class SetupFieldError {
-    ENDPOINT_REQUIRED,
-    HTTPS_REQUIRED,
-    ORIGIN_REQUIRED,
-    INVALID_PORT,
-    TOKEN_REQUIRED,
-    TOKEN_TOO_LONG,
+    PAIRING_REQUIRED,
+    PAIRING_TOO_LARGE,
 }
 
 internal sealed interface SetupAttemptUi {
     data object None : SetupAttemptUi
-    data object GateClosed : SetupAttemptUi
+    data object Testing : SetupAttemptUi
+    data object Saving : SetupAttemptUi
+    data class TestSucceeded(val collectorId: String) : SetupAttemptUi
+    data class Saved(val collectorId: String) : SetupAttemptUi
+    data class Failed(val safeCode: String) : SetupAttemptUi
 }
 
 internal sealed interface RefreshUi {
@@ -39,6 +37,7 @@ internal sealed interface RefreshUi {
 
 internal data class AppUiState(
     val destination: AppDestination = AppDestination.SETUP,
+    val collectorId: String? = null,
     val setup: SetupDraftUi = SetupDraftUi(),
     val detail: DetailUiModel = DetailUiModel.empty(),
     val refresh: RefreshUi = RefreshUi.Idle,
@@ -66,9 +65,9 @@ internal data class DetailUiModel(
             localModels = emptyList(),
             localProjects = emptyList(),
             sources = listOf(
-                SourceDiagnosticUi.gateClosed(SourceUiKind.QUOTA),
-                SourceDiagnosticUi.gateClosed(SourceUiKind.ACCOUNT_USAGE),
-                SourceDiagnosticUi.gateClosed(SourceUiKind.LOCAL_USAGE),
+                SourceDiagnosticUi.notConfigured(SourceUiKind.QUOTA),
+                SourceDiagnosticUi.notConfigured(SourceUiKind.ACCOUNT_USAGE),
+                SourceDiagnosticUi.notConfigured(SourceUiKind.LOCAL_USAGE),
             ),
         )
     }
@@ -133,12 +132,12 @@ internal data class SourceDiagnosticUi(
     val coverage: CoverageUi?,
 ) {
     companion object {
-        fun gateClosed(kind: SourceUiKind): SourceDiagnosticUi =
+        fun notConfigured(kind: SourceUiKind): SourceDiagnosticUi =
             SourceDiagnosticUi(
                 kind = kind,
                 status = SourceUiStatus.UNAVAILABLE,
                 collectedAtText = null,
-                errorCode = "transport_gate_closed",
+                errorCode = "connection.not_configured",
                 safeErrorMessage = null,
                 coverage = if (kind == SourceUiKind.LOCAL_USAGE) {
                     CoverageUi(files = 0, firstEventAtText = null, lastEventAtText = null)

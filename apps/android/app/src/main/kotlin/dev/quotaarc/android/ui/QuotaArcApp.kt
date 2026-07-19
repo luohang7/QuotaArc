@@ -98,14 +98,14 @@ internal fun QuotaArcApp(viewModel: AppViewModel) {
                 when (state.destination) {
                     AppDestination.SETUP -> SetupScreen(
                         state = state.setup,
-                        onEndpointChanged = viewModel::updateEndpoint,
-                        onTokenChanged = viewModel::updateToken,
-                        onToggleTokenVisibility = viewModel::toggleTokenVisibility,
-                        onTestConnection = viewModel::attemptConnectionOrSave,
-                        onSave = viewModel::attemptConnectionOrSave,
+                        onPairingJsonChanged = viewModel::updatePairingJson,
+                        onTogglePairingVisibility = viewModel::togglePairingVisibility,
+                        onTestConnection = viewModel::testConnection,
+                        onSave = viewModel::saveConnection,
                     )
 
                     AppDestination.DETAILS -> DetailScreen(
+                        collectorId = state.collectorId,
                         model = state.detail,
                         refresh = state.refresh,
                     )

@@ -1,47 +1,88 @@
 # QuotaArc release gates
 
-This file keeps environment and external dependencies visible. A gate is not
-complete merely because source code or a package skeleton exists.
+Date: 2026-07-20
+
+A checked source/test gate is not physical-device or operational evidence.
 
 ## Collector and contract
 
-- [x] Sanitized v1 contract fixtures and validation pass.
+- [x] Sanitized v1 summary fixtures and validation pass.
+- [x] Strict device health, pairing, refresh receipt, and normalized error
+      contracts pass.
 - [x] Current Codex app-server quota probe passes without exposing secrets.
-- [x] Current local session corpus cold-indexes within the 30-second and
-      250-MiB limits.
-- [ ] Durable warm scans meet the 500-ms no-change target and normally read only
+- [x] Current session corpus cold-indexes within 30 seconds and 250 MiB.
+- [ ] Durable warm scans meet the 500 ms no-change target and normally read only
       appended bytes.
-- [x] Fixture and store regressions verify idempotence for repeated, append,
-      archive, truncate, replace, fork, replay, and counter-reset cases.
-- [x] A packaged single-file Collector installs and runs outside the workspace.
-- [ ] A 24-hour Collector soak preserves its last-good snapshot.
-- [ ] Authenticated Collector-to-phone transport has an accepted ADR and test
-      evidence.
-- [ ] Real transport partitions the phone cache by stable Collector identity
-      and preserves a manual refresh arriving during an in-flight periodic
-      fetch.
+- [x] Fixture/store regressions cover repeated, append, archive, truncate,
+      replace, fork, replay, and counter reset.
+- [x] A single-file Collector installs and runs outside the workspace.
+- [ ] A 24-hour Collector soak preserves restart-safe last-good state.
 
-See [implementation status](IMPLEMENTATION_STATUS.md) for dated measurements
-and the boundary between the cold-scan proof and the open durable warm-scan
-work.
+## Authenticated phone transport
 
-## Xiaomi 14
+- [x] ADR 0003 is accepted.
+- [x] Loopback default, concrete-IP LAN opt-in, wildcard rejection, TLS 1.3,
+      private state/key permissions, and certificate SAN validation are
+      implemented and tested.
+- [x] Stable Collector/device identity plus one-time issue, list, and revoke
+      primitives are implemented and package-smoked; the issue-new, save-new,
+      revoke-old rotation order is documented for physical acceptance.
+- [x] HMAC timestamp/nonce replay protection, scope enforcement, rate limits,
+      fixed routes, strict errors, response bounds, and no redirect/raw RPC are
+      tested.
+- [x] Android pins the leaf SHA-256 certificate, checks validity, retains
+      hostname verification, and forbids cleartext.
+- [x] Android encrypts the token with Keystore AES-256-GCM and atomically stores
+      metadata plus ciphertext.
+- [x] Test never persists; Save probes before commit and keeps the old
+      connection on pre-commit failure.
+- [x] Cache is bound to `collectorId`; switching cancels the old repository
+      generation and disabled restore cannot rebind persistent cache.
+- [x] Manual refresh intent is preserved as one follow-up behind periodic work.
+- [x] Delayed `current` and completed `refresh` calls re-check the active
+      generation and cannot return a previous Collector after switching.
+- [ ] Same-LAN firewall, pin, authentication, revoke, and recovery behavior is
+      demonstrated on the physical Xiaomi 14.
 
-- [x] Gate-closed Phase 2A source implements strict v1 decoding, persistent
-      last-good cache, single-flight refresh, source-separated app UI, a
-      responsive Glance widget, and a unique 30-minute WorkManager policy that
-      stays dormant while transport is closed.
-- [x] Static policy verifies no release `INTERNET` permission, no cleartext or
-      trust-all client, no emulator bypass, and the explicit
-      `transport_gate_closed` adapter.
-- [x] Gradle 9.5.0 configures all three Android modules and resolves their
-      pinned dependencies under an isolated JDK 17.
-- [ ] Android Studio, JDK, SDK, and ADB are installed and recorded.
-- [ ] SDK 36 licenses are accepted by the developer; Android unit tests, lint,
-      resource processing, and debug assembly pass.
-- [ ] Glance hello-world builds and runs on the physical Xiaomi 14.
-- [ ] Widget resize, HyperOS cropping, reboot, process death, network loss,
-      battery saver, and overnight Doze behavior are measured.
+## Android automated gates
+
+- [x] Static policy reports one `INTERNET` permission, cleartext false,
+      `pinned_https`, and Keystore AES-GCM storage.
+- [x] Android rejects redirects, oversized responses, identity mismatch, and
+      invalid summaries without committing a candidate.
+- [x] Android JVM tests pass: data 63, widget 22, app 12.
+- [x] Glance composition tests cover compact/medium/empty/no-quota and refresh.
+- [x] Android lint and debug APK assembly pass.
+- [x] Minified/R8 release APK assembly and resource shrinking pass.
+- [x] Widget instrumentation sources and test APK compile.
+- [x] An isolated local API 34 Gradle managed device ran the WorkManager
+      TestDriver integration test on 2026-07-20.
+- [ ] GitHub `android` job passes on the pushed revision.
+- [ ] GitHub managed API 34 device runs the WorkManager TestDriver test and
+      uploads its report.
+
+## Xiaomi 14 / HyperOS
+
+- [ ] ADB sees the exact Xiaomi 14 serial and the debug APK installs.
+- [ ] Full pairing JSON tests without saving, then saves and displays the same
+      `collectorId`.
+- [ ] Wrong pin, hostname mismatch, bad token, and revoked token save nothing
+      on the physical device; synthetic protocol mutations remain automated
+      gates.
+- [ ] Compact widget is uncropped and shows the lowest remaining bucket.
+- [ ] Medium widget is uncropped and exposes all current buckets plus today's
+      activity.
+- [ ] App/widget manual refresh, offline fallback, Collector restart, and later
+      recovery are recorded.
+- [ ] Collector identity switch never shows the old identity's snapshot.
+- [ ] Process death and reboot restore the encrypted connection/cache and
+      background schedule.
+- [ ] HyperOS battery saver and overnight Doze timing are measured without a
+      request loop.
+- [ ] Light/dark, large text, and TalkBack remain legible and meaningful.
+
+Use [the physical runbook](XIAOMI14_CONNECTION_AND_ACCEPTANCE.md). Emulator,
+JVM, lint, and APK results cannot check these rows.
 
 ## Watch S4 simulator
 
@@ -53,11 +94,10 @@ work.
 
 - [ ] Xiaomi partner debugging access is granted.
 - [ ] Required OTA and beta Xiaomi Wear app are available.
-- [ ] Xiaomi's minimal interconnect demo confirms package-name and signing
-      requirements.
+- [ ] Xiaomi's minimal interconnect demo confirms package/signing requirements.
 - [ ] A third-party installation or release channel is confirmed.
 - [ ] Installation, launch, paired-phone transfer, reconnect, and reboot are
-      demonstrated on the physical watch.
+      demonstrated on the watch.
 
-Until every real-device item is checked with evidence, status must remain
+Until every real-watch row is checked with evidence, status remains
 `Watch simulator only; real device blocked`.

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://quotaarc.dev/schema/v1/pairing-bundle.schema.json",
+  "title": "QuotaArc device pairing bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pairingVersion",
+    "endpoint",
+    "collectorId",
+    "certificateSha256",
+    "deviceToken",
+    "scopes"
+  ],
+  "properties": {
+    "pairingVersion": { "const": 1 },
+    "endpoint": {
+      "type": "string",
+      "pattern": "^https://(?:\\[[0-9A-Fa-f:.]+\\]|[A-Za-z0-9.-]+)(?::[1-9][0-9]{0,4})?/?$"
+    },
+    "collectorId": {
+      "type": "string",
+      "pattern": "^qac_[A-Za-z0-9_-]{22,64}$"
+    },
+    "certificateSha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "deviceToken": {
+      "type": "string",
+      "pattern": "^qa1\\.[A-Za-z0-9_-]{12,64}\\.[A-Za-z0-9_-]{32,128}$"
+    },
+    "scopes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["summary.read", "refresh.write"]
+      }
+    }
+  }
+}

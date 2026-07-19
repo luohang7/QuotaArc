@@ -3,20 +3,23 @@ package dev.quotaarc.android.data.api
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DisabledQuotaArcDeviceApiTest {
     @Test
-    fun `every release capability is gate closed and non-retryable`() = runTest {
-        val calls = listOf(
-            DisabledQuotaArcDeviceApi.health(),
-            DisabledQuotaArcDeviceApi.fetchSummary(),
-            DisabledQuotaArcDeviceApi.requestRefresh(),
-        )
-        calls.forEach { call ->
-            val failure = (call as DeviceApiResult.Failure).failure
-            assertEquals(DeviceApiFailureKind.GATE_CLOSED, failure.kind)
-            assertEquals("transport_gate_closed", failure.code)
+    fun `connection fallback uses actionable non-retryable reasons`() = runTest {
+        for ((reason, code) in listOf(
+            DisabledConnectionReason.NOT_CONFIGURED to "connection.not_configured",
+            DisabledConnectionReason.CREDENTIAL_UNAVAILABLE to "credential.unavailable",
+        )) {
+            val result = DisabledQuotaArcDeviceApi
+                .forConnectionFailure(reason)
+                .fetchSummary()
+            assertTrue(result is DeviceApiResult.Failure)
+            val failure = (result as DeviceApiResult.Failure).failure
+            assertEquals(DeviceApiFailureKind.UNAUTHORIZED, failure.kind)
+            assertEquals(code, failure.code)
             assertFalse(failure.retryable)
         }
     }

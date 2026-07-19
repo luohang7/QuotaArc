@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://quotaarc.dev/schema/v1/device-error.schema.json",
+  "title": "QuotaArc device API error v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "error"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "retryable": { "type": "boolean" }
+      }
+    }
+  }
+}

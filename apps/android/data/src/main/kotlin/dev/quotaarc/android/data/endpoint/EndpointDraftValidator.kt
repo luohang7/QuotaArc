@@ -4,7 +4,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.util.Locale
 
-data class ValidatedEndpoint internal constructor(
+class ValidatedEndpoint internal constructor(
     val baseUrl: String,
 )
 
@@ -26,8 +26,8 @@ sealed interface EndpointValidationResult {
 }
 
 /**
- * Validates only a future production endpoint draft. The release transport
- * remains gate-closed and this type deliberately has no persistence method.
+ * Validates and canonicalizes the HTTPS origin before production transport is
+ * constructed. This type deliberately has no persistence method.
  */
 object EndpointDraftValidator {
     fun validate(raw: String): EndpointValidationResult {

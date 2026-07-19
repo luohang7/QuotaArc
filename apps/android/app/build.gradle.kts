@@ -48,7 +48,7 @@ android {
         abortOnError = true
         checkReleaseBuilds = true
         warningsAsErrors = true
-        // Phase 2A deliberately validates API 36; independent library-module reports
+        // Phase 2B deliberately validates API 36; independent library-module reports
         // keep dependency freshness visible without breaking this pinned release gate.
         disable += "GradleDependency"
         disable += "OldTargetApi"
@@ -85,5 +85,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 }

@@ -1,0 +1,80 @@
+{
+  "quota": {
+    "status": "ok",
+    "collectedAt": "2026-07-19T16:00:00Z",
+    "value": {
+      "limits": [
+        {
+          "limitId": "acceptance-b",
+          "limitName": "Collector B fixture",
+          "windows": [
+            {
+              "windowMinutes": 10080,
+              "usedPercent": 22,
+              "remainingPercent": 78,
+              "resetsAt": "2026-07-27T00:00:00Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "accountUsage": {
+    "status": "ok",
+    "collectedAt": "2026-07-19T16:00:00Z",
+    "value": {
+      "dailyTokens": [
+        {
+          "date": "2026-07-20",
+          "tokens": 222
+        }
+      ]
+    }
+  },
+  "localUsage": {
+    "status": "ok",
+    "collectedAt": "2026-07-19T16:00:00Z",
+    "value": {
+      "period": "today",
+      "newInputTokens": 22,
+      "cachedInputTokens": 2,
+      "outputTokens": 2,
+      "reasoningTokens": 0,
+      "models": [
+        {
+          "id": "acceptance-model-b",
+          "label": "Collector B model",
+          "newInputTokens": 22,
+          "cachedInputTokens": 2,
+          "outputTokens": 2,
+          "reasoningTokens": 0
+        }
+      ],
+      "projects": [
+        {
+          "id": "acceptance-project-b",
+          "label": "Collector B project",
+          "newInputTokens": 22,
+          "cachedInputTokens": 2,
+          "outputTokens": 2,
+          "reasoningTokens": 0
+        }
+      ],
+      "days": [
+        {
+          "id": "2026-07-20",
+          "label": "2026-07-20",
+          "newInputTokens": 22,
+          "cachedInputTokens": 2,
+          "outputTokens": 2,
+          "reasoningTokens": 0
+        }
+      ],
+      "coverage": {
+        "files": 1,
+        "firstEventAt": "2026-07-19T16:00:00Z",
+        "lastEventAt": "2026-07-19T16:00:00Z"
+      }
+    }
+  }
+}

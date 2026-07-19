@@ -2,6 +2,7 @@ package dev.quotaarc.android.widget
 
 import android.content.Context
 import dev.quotaarc.android.data.QuotaArcData
+import dev.quotaarc.android.data.connection.QuotaArcConnectionCoordinator
 import dev.quotaarc.android.data.repository.PhoneCacheState
 import dev.quotaarc.android.data.repository.QuotaArcRepository
 import dev.quotaarc.android.data.repository.RefreshFailure
@@ -18,17 +19,21 @@ internal object WidgetRepositoryBridge {
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @Volatile
-    private var repository: QuotaArcRepository? = null
+    private var connectionCoordinator: QuotaArcConnectionCoordinator? = null
 
     suspend fun current(context: Context): WidgetMapperInput {
         val state = try {
-            repository(context).current()
+            restoredRepository(context).current()
         } catch (error: Exception) {
             if (error is CancellationException) throw error
             return WidgetMapperInput(
                 snapshot = null,
                 phoneCacheState = WidgetCacheState.EMPTY,
-                lastFailure = WidgetFailureKind.UNAVAILABLE,
+                lastFailure = if (QuotaArcData.hasConnectionMetadata(context)) {
+                    WidgetFailureKind.UNAVAILABLE
+                } else {
+                    WidgetFailureKind.NOT_CONFIGURED
+                },
                 isRefreshing = WidgetRefreshStateStore.isRefreshing(context),
             )
         }
@@ -42,7 +47,7 @@ internal object WidgetRepositoryBridge {
         manual: Boolean,
     ): WidgetRefreshDisposition {
         val result = try {
-            repository(context).refresh(
+            restoredRepository(context).refresh(
                 if (manual) RefreshTrigger.MANUAL else RefreshTrigger.PERIODIC,
             )
         } catch (error: Exception) {
@@ -56,13 +61,16 @@ internal object WidgetRepositoryBridge {
         }
     }
 
-    private fun repository(context: Context): QuotaArcRepository {
-        repository?.let { return it }
+    private suspend fun restoredRepository(context: Context): QuotaArcRepository =
+        coordinator(context).restoredRepository()
+
+    private fun coordinator(context: Context): QuotaArcConnectionCoordinator {
+        connectionCoordinator?.let { return it }
         return synchronized(this) {
-            repository ?: QuotaArcData.createGateClosedRepository(
+            connectionCoordinator ?: QuotaArcData.createConnectionManager(
                 context = context.applicationContext,
                 scope = repositoryScope,
-            ).also { repository = it }
+            ).also { connectionCoordinator = it }
         }
     }
 
@@ -72,9 +80,7 @@ internal object WidgetRepositoryBridge {
         RepositoryState.Empty -> WidgetMapperInput(
             snapshot = null,
             phoneCacheState = WidgetCacheState.EMPTY,
-            // This bridge is constructed exclusively from the release
-            // gate-closed repository until the authenticated transport ADR lands.
-            lastFailure = WidgetFailureKind.GATE_CLOSED,
+            lastFailure = WidgetFailureKind.NOT_CONFIGURED,
             isRefreshing = isRefreshing,
         )
         is RepositoryState.Error -> WidgetMapperInput(
@@ -128,14 +134,38 @@ internal object WidgetRepositoryBridge {
         }
 
     private fun RefreshFailure.toWidgetFailure(): WidgetFailureKind = when (kind) {
-        RefreshFailureKind.GATE_CLOSED -> WidgetFailureKind.GATE_CLOSED
+        RefreshFailureKind.GATE_CLOSED -> WidgetFailureKind.NOT_CONFIGURED
         RefreshFailureKind.OFFLINE,
         RefreshFailureKind.TIMEOUT -> WidgetFailureKind.OFFLINE
-        RefreshFailureKind.AUTH_REQUIRED -> WidgetFailureKind.AUTHENTICATION
+        RefreshFailureKind.AUTH_REQUIRED ->
+            if (code == "connection.not_configured") {
+                WidgetFailureKind.NOT_CONFIGURED
+            } else {
+                WidgetFailureKind.AUTHENTICATION
+            }
         RefreshFailureKind.CONTRACT_INVALID,
         RefreshFailureKind.UNSUPPORTED_SCHEMA,
         RefreshFailureKind.OUT_OF_ORDER -> WidgetFailureKind.INCOMPATIBLE
-        RefreshFailureKind.REMOTE,
+        RefreshFailureKind.REMOTE ->
+            if (
+                code.startsWith("tls.") ||
+                code == "response.collector_identity_mismatch" ||
+                code == "response.redirect_forbidden"
+            ) {
+                WidgetFailureKind.SECURITY
+            } else {
+                WidgetFailureKind.UNAVAILABLE
+            }
         RefreshFailureKind.NO_RENDERABLE_DATA -> WidgetFailureKind.UNAVAILABLE
     }
+}
+
+/**
+ * Prevents a WorkManager or widget-component cold start from issuing a request
+ * through the restore-pending repository. The authoritative DataStore/Keystore
+ * restore completes before the active repository is selected.
+ */
+internal suspend fun QuotaArcConnectionCoordinator.restoredRepository(): QuotaArcRepository {
+    awaitInitialRestore()
+    return repository
 }

@@ -35,12 +35,15 @@ import dev.quotaarc.android.ui.model.SetupFieldError
 @Composable
 internal fun SetupScreen(
     state: SetupDraftUi,
-    onEndpointChanged: (String) -> Unit,
-    onTokenChanged: (String) -> Unit,
-    onToggleTokenVisibility: () -> Unit,
+    onPairingJsonChanged: (String) -> Unit,
+    onTogglePairingVisibility: () -> Unit,
     onTestConnection: () -> Unit,
     onSave: () -> Unit,
 ) {
+    val busy =
+        state.attempt == SetupAttemptUi.Testing ||
+            state.attempt == SetupAttemptUi.Saving
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -59,37 +62,22 @@ internal fun SetupScreen(
         )
 
         OutlinedTextField(
-            value = state.endpoint,
-            onValueChange = onEndpointChanged,
+            value = state.pairingJson,
+            onValueChange = onPairingJsonChanged,
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text(stringResource(R.string.endpoint_label)) },
+            enabled = !busy,
+            minLines = 6,
+            maxLines = 12,
+            label = { Text(stringResource(R.string.pairing_bundle_label)) },
             supportingText = {
                 Text(
-                    state.endpointError?.let { stringResource(it.messageResource()) }
-                        ?: stringResource(R.string.endpoint_supporting),
+                    state.pairingError?.let {
+                        stringResource(it.messageResource())
+                    } ?: stringResource(R.string.pairing_bundle_supporting),
                 )
             },
-            isError = state.endpointError != null,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Uri,
-                imeAction = ImeAction.Next,
-            ),
-        )
-
-        OutlinedTextField(
-            value = state.token,
-            onValueChange = onTokenChanged,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text(stringResource(R.string.token_label)) },
-            supportingText = {
-                state.tokenError?.let {
-                    Text(stringResource(it.messageResource()))
-                }
-            },
-            isError = state.tokenError != null,
-            visualTransformation = if (state.tokenVisible) {
+            isError = state.pairingError != null,
+            visualTransformation = if (state.pairingVisible) {
                 VisualTransformation.None
             } else {
                 PasswordVisualTransformation()
@@ -99,12 +87,15 @@ internal fun SetupScreen(
                 imeAction = ImeAction.Done,
             ),
             trailingIcon = {
-                TextButton(onClick = onToggleTokenVisibility) {
+                TextButton(
+                    enabled = !busy,
+                    onClick = onTogglePairingVisibility,
+                ) {
                     Text(
-                        if (state.tokenVisible) {
-                            stringResource(R.string.hide_token)
+                        if (state.pairingVisible) {
+                            stringResource(R.string.hide_pairing_bundle)
                         } else {
-                            stringResource(R.string.show_token)
+                            stringResource(R.string.show_pairing_bundle)
                         },
                     )
                 }
@@ -117,52 +108,114 @@ internal fun SetupScreen(
         ) {
             OutlinedButton(
                 modifier = Modifier.weight(1f),
+                enabled = !busy,
                 onClick = onTestConnection,
             ) {
-                Text(stringResource(R.string.test_connection))
+                Text(
+                    if (state.attempt == SetupAttemptUi.Testing) {
+                        stringResource(R.string.testing_connection)
+                    } else {
+                        stringResource(R.string.test_connection)
+                    },
+                )
             }
             Button(
                 modifier = Modifier.weight(1f),
+                enabled = !busy,
                 onClick = onSave,
             ) {
-                Text(stringResource(R.string.save_connection))
+                Text(
+                    if (state.attempt == SetupAttemptUi.Saving) {
+                        stringResource(R.string.saving_connection)
+                    } else {
+                        stringResource(R.string.save_connection)
+                    },
+                )
             }
         }
 
-        if (state.attempt == SetupAttemptUi.GateClosed) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                ),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.gate_closed_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                    Text(stringResource(R.string.gate_closed_body))
-                }
-            }
-        }
+        SetupAttemptCard(state.attempt)
 
         Text(
-            text = stringResource(R.string.setup_not_saved),
+            text = stringResource(R.string.pairing_security_note),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
 
+@Composable
+private fun SetupAttemptCard(attempt: SetupAttemptUi) {
+    val card = when (attempt) {
+        SetupAttemptUi.None -> return
+        SetupAttemptUi.Testing ->
+            Triple(
+                R.string.testing_connection,
+                R.string.connection_probe_body,
+                false,
+            )
+        SetupAttemptUi.Saving ->
+            Triple(
+                R.string.saving_connection,
+                R.string.connection_save_body,
+                false,
+            )
+        is SetupAttemptUi.TestSucceeded ->
+            Triple(
+                R.string.connection_test_succeeded,
+                R.string.connection_test_succeeded_body,
+                false,
+            )
+        is SetupAttemptUi.Saved ->
+            Triple(
+                R.string.connection_saved,
+                R.string.connection_saved_body,
+                false,
+            )
+        is SetupAttemptUi.Failed ->
+            Triple(
+                R.string.connection_failed,
+                R.string.connection_failed_body,
+                true,
+            )
+    }
+    val body = when (attempt) {
+        is SetupAttemptUi.TestSucceeded ->
+            stringResource(card.second, attempt.collectorId)
+        is SetupAttemptUi.Saved ->
+            stringResource(card.second, attempt.collectorId)
+        is SetupAttemptUi.Failed ->
+            stringResource(card.second, attempt.safeCode)
+        else -> stringResource(card.second)
+    }
+    Card(
+        colors = if (card.third) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+            )
+        } else {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        },
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(card.first),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(body)
+        }
+    }
+}
+
 private fun SetupFieldError.messageResource(): Int = when (this) {
-    SetupFieldError.ENDPOINT_REQUIRED -> R.string.endpoint_required
-    SetupFieldError.HTTPS_REQUIRED -> R.string.endpoint_https_required
-    SetupFieldError.ORIGIN_REQUIRED -> R.string.endpoint_origin_required
-    SetupFieldError.INVALID_PORT -> R.string.endpoint_port_invalid
-    SetupFieldError.TOKEN_REQUIRED -> R.string.token_required
-    SetupFieldError.TOKEN_TOO_LONG -> R.string.token_too_long
+    SetupFieldError.PAIRING_REQUIRED -> R.string.pairing_bundle_required
+    SetupFieldError.PAIRING_TOO_LARGE -> R.string.pairing_bundle_too_large
 }

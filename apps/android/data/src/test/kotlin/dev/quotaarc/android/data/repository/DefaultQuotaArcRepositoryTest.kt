@@ -28,6 +28,8 @@ import java.time.Instant
 class DefaultQuotaArcRepositoryTest {
     private val codec = QuotaArcV1JsonCodec()
     private val initialNow = Instant.parse("2026-07-19T09:01:00Z")
+    private val collectorA = CollectorIdentity.fromStableId("collector-a")
+    private val collectorB = CollectorIdentity.fromStableId("collector-b")
 
     @Test
     fun `fresh valid response is promoted atomically`() = runTest {
@@ -84,6 +86,46 @@ class DefaultQuotaArcRepositoryTest {
         assertEquals(PhoneCacheState.FALLBACK, fallback.phoneCacheState)
         assertEquals(RefreshFailureKind.OFFLINE, fallback.lastFailure?.kind)
     }
+
+    @Test
+    fun `switching Collector identity cannot expose or reuse another Collector cache`() =
+        runTest {
+            val sharedCache = InMemorySnapshotCache()
+            val repositoryA = repository(
+                api = apiWithFetch(canonicalFixture("summary.ok.json")),
+                cache = sharedCache,
+                collectorIdentity = collectorA,
+            )
+            val snapshotA =
+                (repositoryA.refresh(RefreshTrigger.PERIODIC) as RefreshResult.Updated)
+                    .content.snapshot
+            assertEquals(snapshotA, (repositoryA.current() as RepositoryState.Content).snapshot)
+
+            val offline = DeviceApiResult.Failure(
+                DeviceApiFailure(
+                    kind = DeviceApiFailureKind.OFFLINE,
+                    code = "transport.offline",
+                    retryable = true,
+                ),
+            )
+            val repositoryB = repository(
+                api = ScriptedQuotaArcDeviceApi(fetchSteps = listOf({ offline })),
+                cache = sharedCache,
+                collectorIdentity = collectorB,
+            )
+
+            assertEquals(RepositoryState.Empty, repositoryB.current())
+            val switched = repositoryB.refresh(RefreshTrigger.PERIODIC)
+
+            assertTrue(switched is RefreshResult.Failed)
+            assertEquals(
+                RefreshFailureKind.OFFLINE,
+                (repositoryB.current() as RepositoryState.Error).failure.kind,
+            )
+            assertEquals(RepositoryState.Empty, repositoryA.current())
+            assertEquals(collectorB.stableId, sharedCache.read().collectorIdentity)
+            assertNull(sharedCache.read().lastGood)
+        }
 
     @Test
     fun `aged successful cache and aged fallback remain distinct`() = runTest {
@@ -230,7 +272,45 @@ class DefaultQuotaArcRepositoryTest {
     }
 
     @Test
-    fun `cancelling one waiter does not cancel the shared refresh`() = runTest {
+    fun `manual intent queues one follow-up behind an in-flight periodic refresh`() = runTest {
+        val release = CompletableDeferred<Unit>()
+        val api = ScriptedQuotaArcDeviceApi(
+            fetchSteps = listOf(
+                {
+                    release.await()
+                    DeviceApiResult.Success(canonicalFixture("summary.ok.json"))
+                },
+                { DeviceApiResult.Success(canonicalFixture("summary.ok.json")) },
+            ),
+        )
+        val repository = repository(api)
+
+        val periodic = async {
+            repository.refresh(RefreshTrigger.PERIODIC)
+        }
+        runCurrent()
+        assertEquals(1, api.fetchCalls.get())
+
+        val manualCallers = List(20) {
+            async { repository.refresh(RefreshTrigger.MANUAL) }
+        }
+        runCurrent()
+        assertEquals(1, api.fetchCalls.get())
+        assertEquals(0, api.refreshCalls.get())
+
+        release.complete(Unit)
+        assertTrue(periodic.await() is RefreshResult.Updated)
+        val manualResults = manualCallers.awaitAll()
+
+        assertTrue(manualResults.all { it is RefreshResult.Updated })
+        assertSame(manualResults.first(), manualResults.last())
+        assertEquals(1, api.refreshCalls.get())
+        assertEquals(2, api.fetchCalls.get())
+        assertEquals(listOf("summary", "refresh", "summary"), api.callOrder)
+    }
+
+    @Test
+    fun `cancelling one periodic waiter does not cancel its queued manual follow-up`() = runTest {
         val release = CompletableDeferred<Unit>()
         val api = ScriptedQuotaArcDeviceApi(
             fetchSteps = listOf({
@@ -247,7 +327,7 @@ class DefaultQuotaArcRepositoryTest {
         assertEquals(1, api.fetchCalls.get())
         cancelledWaiter.cancelAndJoin()
 
-        val survivingWaiter = async {
+        val survivingManual = async {
             repository.refresh(RefreshTrigger.MANUAL)
         }
         runCurrent()
@@ -255,8 +335,9 @@ class DefaultQuotaArcRepositoryTest {
         assertEquals(0, api.refreshCalls.get())
 
         release.complete(Unit)
-        assertTrue(survivingWaiter.await() is RefreshResult.Updated)
-        assertEquals(1, api.fetchCalls.get())
+        assertTrue(survivingManual.await() is RefreshResult.Updated)
+        assertEquals(1, api.refreshCalls.get())
+        assertEquals(2, api.fetchCalls.get())
     }
 
     @Test
@@ -288,12 +369,15 @@ class DefaultQuotaArcRepositoryTest {
 
     private fun kotlinx.coroutines.test.TestScope.repository(
         api: ScriptedQuotaArcDeviceApi,
+        cache: InMemorySnapshotCache = InMemorySnapshotCache(),
+        collectorIdentity: CollectorIdentity = collectorA,
         clock: MutableClock = MutableClock(initialNow),
         staleAfter: Duration = Duration.ofMinutes(60),
     ): DefaultQuotaArcRepository =
         DefaultQuotaArcRepository(
             api = api,
-            cache = InMemorySnapshotCache(),
+            cache = cache,
+            collectorIdentity = collectorIdentity,
             parentScope = backgroundScope,
             clock = clock,
             staleAfter = staleAfter,

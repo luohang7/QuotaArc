@@ -11,6 +11,10 @@ const config: CollectorConfig = {
   codexHome: "/Users/alice/.codex",
   activeSessionsDirectory: "/Users/alice/.codex/sessions",
   archivedSessionsDirectory: "/Users/alice/.codex/archived_sessions",
+  deviceStateDirectory: "/Users/alice/.quotaarc",
+  deviceRegistryFile: "/Users/alice/.quotaarc/devices.json",
+  tlsCertificateFile: "/Users/alice/.quotaarc/collector-cert.pem",
+  tlsPrivateKeyFile: "/Users/alice/.quotaarc/collector-key.pem",
 };
 
 test("doctor reports capabilities without returning filesystem paths", async () => {

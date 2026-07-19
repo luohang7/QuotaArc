@@ -158,8 +158,10 @@ object QuotaArcV1Validator {
             val path = "$.accountUsage.dailyTokens[$index]"
             val date = bucket.date.toString()
             if (!dates.add(date)) issue("$path.date", "must be unique")
-            if (previous != null && date <= previous!!) {
-                issue("$path.date", "daily buckets must be strictly ascending")
+            previous?.let { previousDate ->
+                if (date <= previousDate) {
+                    issue("$path.date", "daily buckets must be strictly ascending")
+                }
             }
             previous = date
             validateSafeInteger(bucket.tokens, "$path.tokens")
