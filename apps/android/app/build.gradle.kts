@@ -48,6 +48,8 @@ android {
         abortOnError = true
         checkReleaseBuilds = true
         warningsAsErrors = true
+        // Phase 2A deliberately validates API 36; API 37 adoption is a separate release gate.
+        disable += "OldTargetApi"
     }
 
     packaging {

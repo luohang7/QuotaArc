@@ -46,4 +46,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Verify Android vertical slice
-        run: apps/android/gradlew -p apps/android testDebugUnitTest lintDebug assembleDebug
+        run: |
+          status=0
+          apps/android/gradlew -p apps/android testDebugUnitTest lintDebug assembleDebug || status=$?
+          if [ "$status" -ne 0 ]; then
+            find apps/android -type f -name "lint-results-*.txt" -print -exec cat {} \;
+          fi
+          exit "$status"
