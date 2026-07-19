@@ -3,6 +3,7 @@ package dev.quotaarc.android.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -115,7 +116,7 @@ internal fun QuotaArcApp(viewModel: AppViewModel) {
 }
 
 @Composable
-private fun DestinationItem(
+private fun RowScope.DestinationItem(
     selected: Boolean,
     label: String,
     onClick: () -> Unit,
