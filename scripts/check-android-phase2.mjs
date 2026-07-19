@@ -104,6 +104,7 @@ const catalog = await readFile(
 for (const pin of [
   'agp = "9.3.0"',
   'kotlin = "2.3.21"',
+  'lifecycle = "2.10.0"',
   'glance = "1.1.1"',
   'work = "2.11.2"',
   'datastore = "1.2.1"',
