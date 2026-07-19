@@ -57,9 +57,11 @@ A checked source/test gate is not physical-device or operational evidence.
 - [x] Widget instrumentation sources and test APK compile.
 - [x] An isolated local API 34 Gradle managed device ran the WorkManager
       TestDriver integration test on 2026-07-20.
-- [ ] GitHub `android` job passes on the pushed revision.
-- [ ] GitHub managed API 34 device runs the WorkManager TestDriver test and
-      uploads its report.
+- [x] GitHub `android` job passes on implementation commit `c5e6af1`
+      ([run 29697179837](https://github.com/luohang7/QuotaArc/actions/runs/29697179837)).
+- [x] The same GitHub run uses a managed API 34 device for the WorkManager
+      TestDriver test and uploads the `workmanager-managed-device-reports`
+      artifact.
 
 ## Xiaomi 14 / HyperOS
 

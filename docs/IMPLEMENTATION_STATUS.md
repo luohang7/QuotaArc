@@ -100,6 +100,7 @@ Checks run on this Mac on 2026-07-20:
 | Minified release APK | built unsigned with R8 and resource shrinking |
 | Widget instrumentation sources/APK | compiled and assembled |
 | WorkManager TestDriver on an emulator | passed on an isolated local API 34 ARM Gradle managed device; 1/1 instrumentation test |
+| GitHub PR CI for implementation commit `c5e6af1` | [`verify`, `android`, and `android-workmanager` passed](https://github.com/luohang7/QuotaArc/actions/runs/29697179837); managed-device reports uploaded |
 
 The Android toolchain above was an isolated temporary JDK/SDK used for
 verification. It included temporary emulator and ADB tooling, but does not mean
@@ -137,8 +138,6 @@ Blank rows must stay open.
 
 ## Remaining gates
 
-- Wait for the branch GitHub `android` and `android-workmanager` jobs and record
-  their run URLs before merging.
 - Execute and record the Xiaomi 14 physical matrix.
 - Wire the live scanner fully to durable SQLite cursors and restart-safe
   last-good values, prove the 500 ms warm target, and run the 24-hour Collector
