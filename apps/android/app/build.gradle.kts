@@ -48,9 +48,9 @@ android {
         abortOnError = true
         checkReleaseBuilds = true
         warningsAsErrors = true
-        // Dependency freshness stays visible without breaking the API 36 phase gate.
-        warning += "GradleDependency"
-        // Phase 2A deliberately validates API 36; API 37 adoption is a separate release gate.
+        // Phase 2A deliberately validates API 36; independent library-module reports
+        // keep dependency freshness visible without breaking this pinned release gate.
+        disable += "GradleDependency"
         disable += "OldTargetApi"
     }
 
